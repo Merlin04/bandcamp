@@ -1,6 +1,6 @@
 {
-  "name": "vitesse-webext",
-  "displayName": "Vitesse WebExt",
+  "name": "bandcamp-collector",
+  "displayName": "Bandcamp Collector",
   "version": "0.0.1",
   "description": "[description]",
   "private": true,
@@ -44,5 +44,16 @@
     "web-ext": "^6.4.0",
     "webext-bridge": "^5.0.0",
     "webextension-polyfill": "^0.8.0"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.7.1",
+    "@emotion/styled": "^11.6.0",
+    "@mui/icons-material": "^5.3.1",
+    "@mui/material": "^5.4.0",
+    "@types/react": "^17.0.39",
+    "@types/react-dom": "^17.0.11",
+    "niue": "^0.1.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   }
 }
