@@ -32,9 +32,7 @@ export async function getManifest() {
       128: './assets/icon-512.png',
     },
     permissions: [
-      'tabs',
       'storage',
-      'activeTab',
       'http://*/',
       'https://*/',
     ],
@@ -42,9 +40,11 @@ export async function getManifest() {
       matches: ['http://*/*', 'https://*/*'],
       js: ['./dist/contentScripts/index.global.js'],
     }],
-    web_accessible_resources: [
-      'dist/contentScripts/style.css',
-    ],
+    browser_specific_settings: {
+      gecko: {
+        id: "bandcamp@benjaminsmith.dev"
+      }
+    }
   }
 
   if (isDev) {

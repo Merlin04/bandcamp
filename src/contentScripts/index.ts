@@ -5,18 +5,18 @@ import React from "react";
 import ReactDOM from "react-dom";
 import App, { setupCache } from "./App";
 
+declare global {
+    var _BANDCAMP_COLLECTOR_SHADOW_DOM: ShadowRoot;
+}
+
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value
 (async function () {
-    //@ts-expect-error
-    const isBandcamp = document.querySelector("meta[name=generator]")?.content === "Bandcamp";
-    //if (!isBandcamp) return;
+    //const isBandcamp = document.querySelector("meta[name=generator]")?.content === "Bandcamp";
+    // Yeah sure that works
+    const isBandcamp = document.querySelector("a[href='https://bandcamp.com/terms_of_use']");
+    if (!isBandcamp) return;
 
-    console.info("[vitesse-webext] Hello world from content script");
-
-    // communication example: send previous tab title from background page
-    onMessage("tab-prev", ({ data }) => {
-        console.log(`[vitesse-webext] Navigate from page "${data.title}"`);
-    });
+    console.info("[bandcamp-collector] Content script activated");
 
     // mount component to context window
     const container = document.createElement("bandcamp-collector");
@@ -27,6 +27,8 @@ import App, { setupCache } from "./App";
 
     shadowDOM.appendChild(root);
     document.body.appendChild(container);
+
+    window._BANDCAMP_COLLECTOR_SHADOW_DOM = shadowDOM;
 
     //@ts-expect-error - it works even though typescript complains
     setupCache(shadowDOM);

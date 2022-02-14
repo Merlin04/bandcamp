@@ -1,5 +1,6 @@
 {
     "tabWidth": 4,
     "useTabs": false,
-    "quoteType": "double"
+    "quoteType": "double",
+    "trailingComma": "none"
 }
