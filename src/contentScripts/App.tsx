@@ -2,10 +2,9 @@ import { createTheme, Fab, Zoom } from "@mui/material";
 import { CacheProvider } from "@emotion/react";
 import createCache, { EmotionCache } from "@emotion/cache";
 import LibraryMusicIcon from "@mui/icons-material/LibraryMusic";
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { setState, StorageProvider, useStore } from "./state";
 import AppDialog from "./AppDialog";
-import PlayerDialog from "./PlayerDialog";
 import { ThemeProvider } from "@mui/system";
 import { FAB_ZI } from "./zIndices";
 
@@ -19,10 +18,19 @@ export function setupCache(container: HTMLElement) {
 }
 
 const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#61929c"
+        },
+        secondary: {
+            main: "#1da0c3"
+        }
+    },
     components: {
         MuiModal: {
             defaultProps: {
-                container: () => window._BANDCAMP_COLLECTOR_SHADOW_DOM.children[0]
+                container: () =>
+                    window._BANDCAMP_COLLECTOR_SHADOW_DOM.children[0]
             }
         }
     }
@@ -31,10 +39,10 @@ const theme = createTheme({
 let canGoBackToCloseDialog = false;
 
 export function setOpen(open: boolean) {
-    if(open) {
+    if (open) {
         history.pushState({}, "", "?bc-collector");
         canGoBackToCloseDialog = true;
-    } else if(canGoBackToCloseDialog) {
+    } else if (canGoBackToCloseDialog) {
         history.back();
     } else {
         //history.pushState({}, "", "?");
@@ -53,7 +61,7 @@ export default function App() {
             const historyStateOpen = window.location.search === "?bc-collector";
             console.log("History state open", historyStateOpen);
             console.log("Open", open);
-            if(historyStateOpen !== open) {
+            if (historyStateOpen !== open) {
                 console.log("Setting state to", historyStateOpen);
                 setState({ open: historyStateOpen });
             }
@@ -64,7 +72,7 @@ export default function App() {
     }, [open]);
 
     useEffect(() => {
-        if(location.search === "?bc-collector") {
+        if (location.search === "?bc-collector") {
             setState({ open: true });
         }
     }, []);
@@ -72,16 +80,17 @@ export default function App() {
     return (
         <CacheProvider value={cache}>
             <ThemeProvider theme={theme}>
-                <Zoom
-                    in={!open}
-                    unmountOnExit
-                >
-                    <Fab color="primary" style={{
-                        position: "fixed",
-                        bottom: 16,
-                        right: 16,
-                        zIndex: FAB_ZI
-                    }} onClick={() => setOpen(true)}>
+                <Zoom in={!open} unmountOnExit>
+                    <Fab
+                        color="primary"
+                        style={{
+                            position: "fixed",
+                            bottom: 16,
+                            right: 16,
+                            zIndex: FAB_ZI
+                        }}
+                        onClick={() => setOpen(true)}
+                    >
                         <LibraryMusicIcon />
                     </Fab>
                 </Zoom>
@@ -90,5 +99,5 @@ export default function App() {
                 </StorageProvider>
             </ThemeProvider>
         </CacheProvider>
-    )
+    );
 }

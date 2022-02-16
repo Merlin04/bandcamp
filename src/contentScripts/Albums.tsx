@@ -104,7 +104,7 @@ function AlbumGrid({ albums, isSearch }: { albums: Album[], isSearch?: boolean }
 }
 
 function Album({ album, isSearch }: { album: Album, isSearch?: boolean }) {
-    const { deleteAlbumsMode, selectedAlbums } = useStore(["deleteAlbumsMode", "selectedAlbums"]);
+    const { deleteAlbumsMode, selectedAlbums, playerAlbum } = useStore(["deleteAlbumsMode", "selectedAlbums", "playerAlbum"]);
 
     const checked = deleteAlbumsMode && selectedAlbums.includes(album.data.url);
 
@@ -124,12 +124,19 @@ function Album({ album, isSearch }: { album: Album, isSearch?: boolean }) {
             //     });
             // }
             e.preventDefault();
-            setState({
-                playerAlbum: album.data.url,
-                playerTrack: 0,
-                playerDialogOpen: true,
-                playerState: PlayerState.PAUSED
-            })
+
+            if(playerAlbum === album.data.url) {
+                setState({
+                    playerDialogOpen: true
+                });
+            } else {
+                setState({
+                    playerDialogAlbum: album.data.url,
+                    // playerTrack: 0,
+                    playerDialogOpen: true,
+                    // playerState: PlayerState.PAUSED
+                });    
+            }
         }} onContextMenu={(e) => {
             // Tapping and holding on mobile
             e.preventDefault();

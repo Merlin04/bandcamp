@@ -1,6 +1,3 @@
-/* eslint-disable no-console */
-import { onMessage } from "webext-bridge";
-
 import React from "react";
 import ReactDOM from "react-dom";
 import App, { setupCache } from "./App";
@@ -11,7 +8,6 @@ declare global {
 
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value
 (async function () {
-    //const isBandcamp = document.querySelector("meta[name=generator]")?.content === "Bandcamp";
     // Yeah sure that works
     const isBandcamp = document.querySelector("a[href='https://bandcamp.com/terms_of_use']");
     if (!isBandcamp) return;

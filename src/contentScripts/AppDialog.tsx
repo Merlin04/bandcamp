@@ -1,8 +1,26 @@
-import { AppBar, Dialog, DialogContent, Fade, IconButton, Menu, MenuItem, Slide, Toolbar, Typography } from "@mui/material";
+import {
+    AppBar,
+    Dialog,
+    DialogContent,
+    Fade,
+    IconButton,
+    Menu,
+    MenuItem,
+    Slide,
+    Toolbar,
+    Typography
+} from "@mui/material";
 import { TransitionProps } from "@mui/material/transitions";
 import CloseIcon from "@mui/icons-material/Close";
 import React, { useState } from "react";
-import { defaultStorageValue, setState, setStorage, useStorage, useStore } from "./state";
+import {
+    defaultStorageValue,
+    PlayerState,
+    setState,
+    setStorage,
+    useStorage,
+    useStore
+} from "./state";
 import { setOpen } from "./App";
 import AddThisAlbum from "./AddThisAlbum";
 import { PageType, pageType } from "./scraper";
@@ -10,21 +28,29 @@ import Albums from "./Albums";
 import { Delete, MoreVert, PlaylistRemove } from "@mui/icons-material";
 import MiniPlayer from "./MiniPlayer";
 import PlayerDialog from "./PlayerDialog";
-import SwipeableEdgeDrawer from "./Drawer";
+import SwipeableEdgeDrawer, { DrawerSpacer } from "./Drawer";
 import { BASE_ZI } from "./zIndices";
+import { Portal } from "@mui/base";
 
 export const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
-      children: React.ReactElement;
+        children: React.ReactElement;
     },
-    ref: React.Ref<unknown>,
-  ) {
+    ref: React.Ref<unknown>
+) {
     return <Slide direction="up" ref={ref} {...props} />;
-  });
-  
+});
+
 export default function AppDialog() {
-    // console.log("BANDCAMP", window._BANDCAMP_COLLECTOR_SHADOW_DOM)
-    const { open, deleteAlbumsMode, selectedAlbums } = useStore(["open", "deleteAlbumsMode", "selectedAlbums"]);
+    const { open, deleteAlbumsMode, selectedAlbums, playerState, playerAlbum, playerDialogOpen, playerDialogAlbum } = useStore([
+        "open",
+        "deleteAlbumsMode",
+        "selectedAlbums",
+        "playerState",
+        "playerAlbum",
+        "playerDialogOpen",
+        "playerDialogOpen"
+    ]);
 
     return (
         <>
@@ -32,7 +58,6 @@ export default function AppDialog() {
                 fullScreen
                 disablePortal
                 container={null}
-                // container={() => window._BANDCAMP_COLLECTOR_SHADOW_DOM as unknown as HTMLElement}
                 open={open}
                 onClose={() => setOpen(false)}
                 TransitionComponent={Transition}
@@ -44,75 +69,97 @@ export default function AppDialog() {
                     zIndex: BASE_ZI
                 }}
             >
-                <AppBar sx={{
-                    position: "relative",
-                    transition: "box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, background-color 0.2s ease-in-out",
-                    "& > *:nth-child(2)": {
-                        position: "absolute"
-                    },
-                    "& > *": {
-                        minWidth: "calc(100% - 32px)"
+                <AppBar
+                    sx={{
+                        position: "relative",
+                        transition:
+                            "box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, background-color 0.2s ease-in-out",
+                        "& > *:nth-child(2)": {
+                            position: "absolute"
+                        },
+                        "& > *": {
+                            minWidth: "calc(100% - 32px)"
+                        }
+                    }}
+                    color={
+                        deleteAlbumsMode ? ("warning" as "primary") : "primary"
                     }
-                }} color={deleteAlbumsMode ? "warning" as "primary" : "primary"}>
+                >
                     {/* <Toolbar> */}
-                        <Fade in={deleteAlbumsMode} unmountOnExit>
-                            <Toolbar>
-                                <IconButton
-                                    edge="start"
-                                    color="inherit"
-                                    onClick={() => {
-                                        setState({
-                                            deleteAlbumsMode: false,
-                                            selectedAlbums: []
-                                        });
-                                    }}
-                                    aria-label="exit remove albums mode"
-                                >
-                                    <CloseIcon />
-                                </IconButton>
-                                <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-                                    {selectedAlbums.length}
-                                </Typography>
-                                <DeleteSelectedItemsButton />
-                            </Toolbar>
-                        </Fade>
-                        <Fade in={!deleteAlbumsMode} unmountOnExit>
-                            <Toolbar>
-                                <IconButton
-                                    edge="start"
-                                    color="inherit"
-                                    onClick={() => setOpen(false)}
-                                    aria-label="close"
-                                >
-                                    <CloseIcon />
-                                </IconButton>
-                                <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-                                    Bandcamp Collector
-                                </Typography>
-                                <ActionsMenu />
-                                <IconButton
-                                    edge="end"
-                                    color="inherit"
-                                    onClick={() => setState({ deleteAlbumsMode: true })}
-                                    aria-label="remove albums"
-                                >
-                                    <PlaylistRemove />
-                                </IconButton>
-                            </Toolbar>
-                        </Fade>
+                    <Fade in={deleteAlbumsMode} unmountOnExit>
+                        <Toolbar>
+                            <IconButton
+                                edge="start"
+                                color="inherit"
+                                onClick={() => {
+                                    setState({
+                                        deleteAlbumsMode: false,
+                                        selectedAlbums: []
+                                    });
+                                }}
+                                aria-label="exit remove albums mode"
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                            <Typography
+                                sx={{ ml: 2, flex: 1 }}
+                                variant="h6"
+                                component="div"
+                            >
+                                {selectedAlbums.length}
+                            </Typography>
+                            <DeleteSelectedItemsButton />
+                        </Toolbar>
+                    </Fade>
+                    <Fade in={!deleteAlbumsMode} unmountOnExit>
+                        <Toolbar>
+                            <IconButton
+                                edge="start"
+                                color="inherit"
+                                onClick={() => setOpen(false)}
+                                aria-label="close"
+                            >
+                                <CloseIcon />
+                            </IconButton>
+                            <Typography
+                                sx={{ ml: 2, flex: 1 }}
+                                variant="h6"
+                                component="div"
+                            >
+                                Bandcamp Collector
+                            </Typography>
+                            <ActionsMenu />
+                            <IconButton
+                                edge="end"
+                                color="inherit"
+                                onClick={() =>
+                                    setState({ deleteAlbumsMode: true })
+                                }
+                                aria-label="remove albums"
+                            >
+                                <PlaylistRemove />
+                            </IconButton>
+                        </Toolbar>
+                    </Fade>
                     {/* </Toolbar> */}
                 </AppBar>
                 <DialogContent>
-                    {pageType === PageType.Album && (
-                        <AddThisAlbum />
-                    )}
+                    {pageType === PageType.Album && <AddThisAlbum />}
                     <Albums />
+                    <DrawerSpacer />
                 </DialogContent>
-                <MiniPlayer />
+                {/* <MiniPlayer /> */}
                 <PlayerDialog />
-                <SwipeableEdgeDrawer />
+                {(playerState !== PlayerState.INACTIVE) && !(playerDialogOpen && playerAlbum === playerDialogAlbum) && (
+                    <Portal
+                        container={() =>
+                            window._BANDCAMP_COLLECTOR_SHADOW_DOM.children[0]
+                        }
+                    >
+                        <SwipeableEdgeDrawer />
+                    </Portal>                
+                )}
             </Dialog>
-            {/* <PlayerDialog /> */}
         </>
     );
 }
@@ -127,7 +174,9 @@ function DeleteSelectedItemsButton() {
             color="inherit"
             onClick={() => {
                 setStorage({
-                    albums: albums.filter(a => !selectedAlbums.includes(a.data.url))
+                    albums: albums.filter(
+                        (a) => !selectedAlbums.includes(a.data.url)
+                    )
                 });
                 setState({
                     deleteAlbumsMode: false,
@@ -178,35 +227,53 @@ function ActionsMenu() {
                 MenuListProps={{
                     "aria-labelledby": "actions-menu-button"
                 }}
-                container={anchorEl?.parentElement?.parentElement?.parentElement}
+                container={
+                    anchorEl?.parentElement?.parentElement?.parentElement
+                }
             >
-                <MenuItem onClick={() => {
-                    // Copy the data to clipboard
-                    navigator.clipboard.writeText(JSON.stringify(data));
-                    alert("Copied to clipboard!");
-                    handleClose();
-                }}>Export data</MenuItem>
-                <MenuItem onClick={() => {
-                    const newData = prompt("Paste the data here");
-                    if (newData) {
-                        try {
-                            const parsed = JSON.parse(newData);
-                            setStorage(parsed);
-                        } catch (e) {
-                            alert("Failed to parse input");
-                            return;
+                <MenuItem
+                    onClick={() => {
+                        // Copy the data to clipboard
+                        navigator.clipboard.writeText(JSON.stringify(data));
+                        alert("Copied to clipboard!");
+                        handleClose();
+                    }}
+                >
+                    Export data
+                </MenuItem>
+                <MenuItem
+                    onClick={() => {
+                        const newData = prompt("Paste the data here");
+                        if (newData) {
+                            try {
+                                const parsed = JSON.parse(newData);
+                                setStorage(parsed);
+                            } catch (e) {
+                                alert("Failed to parse input");
+                                return;
+                            }
                         }
-                    }
-                    handleClose();
-                }}>Import data</MenuItem>
-                <MenuItem onClick={() => {
-                    if(confirm("Are you sure you want to delete all your data?")) {
-                        setStorage({ ...defaultStorageValue });
-                    }
-                    handleClose();
-                }}> Reset extension</MenuItem>
+                        handleClose();
+                    }}
+                >
+                    Import data
+                </MenuItem>
+                <MenuItem
+                    onClick={() => {
+                        if (
+                            confirm(
+                                "Are you sure you want to delete all your data?"
+                            )
+                        ) {
+                            setStorage({ ...defaultStorageValue });
+                        }
+                        handleClose();
+                    }}
+                >
+                    {" "}
+                    Reset extension
+                </MenuItem>
             </Menu>
-
         </>
-    )
+    );
 }

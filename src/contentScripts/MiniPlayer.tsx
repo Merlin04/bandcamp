@@ -18,36 +18,30 @@ export default function MiniPlayer() {
             width: "100%",
             height: "150px",
             display: "flex",
-            flexDirection: "column"
+            justifyContent: "center"
         }}>
+            <Box
+                component="img"
+                src={playerAlbumObj.data.imageUrl}
+                sx={{
+                    height: "100%"
+                }}
+            />
             <Box sx={{
-                width: "100%",
-                display: "flex",
-                justifyContent: "center"
+                flex: 1,
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+                whiteSpace: "nowrap"
             }}>
-                <Box
-                    component="img"
-                    src={playerAlbumObj.data.imageUrl}
-                    sx={{
-                        height: "100%"
-                    }}
-                />
-                <Box sx={{
-                    flex: 1,
-                    textOverflow: "ellipsis",
-                    overflow: "hidden",
-                    whiteSpace: "nowrap"
-                }}>
-                    <Typography variant="body1">
-                        {playerAlbumObj.data.tracks[playerTrack].title}
-                    </Typography>
-                    <Typography variant="body2">
-                        <b>{playerAlbumObj.data.title}</b> by {playerAlbumObj.data.artist}
-                    </Typography>
-                </Box>
-                <PlayButton />
-                <TrackControls />
+                <Typography variant="body1">
+                    {playerAlbumObj.data.tracks[playerTrack].title}
+                </Typography>
+                <Typography variant="body2">
+                    <b>{playerAlbumObj.data.title}</b> by {playerAlbumObj.data.artist}
+                </Typography>
             </Box>
+            <PlayButton />
+            <TrackControls />
         </Box>
     ) : null;
 }

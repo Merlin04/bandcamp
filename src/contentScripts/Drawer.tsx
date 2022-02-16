@@ -1,21 +1,23 @@
 import * as React from "react";
 import { Global } from "@emotion/react";
 import { styled } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
 import { grey } from "@mui/material/colors";
-import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import Skeleton from "@mui/material/Skeleton";
 import Typography from "@mui/material/Typography";
-// import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import SwipeableDrawer from "./SwipeableDrawer-patched";
 import { DRAWER_ZI } from "./zIndices";
+import { Paper } from "@mui/material";
+import MiniPlayer from "./MiniPlayer";
+import { PlayButton, TrackControls, usePlayerAlbumObj } from "./Player";
+import { PlayerState, useStorage, useStore } from "./state";
 
-const drawerBleeding = 56;
+const drawerBleeding = 75;
 
-const StyledBox = styled(Box)(({ theme }) => ({
-    backgroundColor: theme.palette.mode === "light" ? "#fff" : grey[800]
-}));
+export const DrawerSpacer = () => {
+    const { playerState } = useStore(["playerState"]);
+    return playerState !== PlayerState.INACTIVE ? <Box sx={{ height: drawerBleeding, minHeight: drawerBleeding }} /> : null;
+}
 
 const Puller = styled(Box)(({ theme }) => ({
     width: 30,
@@ -32,7 +34,7 @@ type Coords = [number, number];
 let scrollFirstCoords: Coords | null = null;
 
 export default function SwipeableEdgeDrawer() {
-    const [open, setOpen] = React.useState(true);
+    const [open, setOpen] = React.useState(false);
 
     const toggleDrawer = (newOpen: boolean) => () => {
         setOpen(newOpen);
@@ -44,11 +46,7 @@ export default function SwipeableEdgeDrawer() {
     const [disableBoxScroll, setDisableBoxScroll] = React.useState(false);
 
     return (
-        // <Root>
-        /*  */
         <SwipeableDrawer
-            // disablePortal
-            // container={() => window._BANDCAMP_COLLECTOR_SHADOW_DOM as unknown as HTMLElement}
             anchor="bottom"
             open={open}
             onClose={toggleDrawer(false)}
@@ -57,12 +55,10 @@ export default function SwipeableEdgeDrawer() {
             disableSwipeToOpen={false}
             ModalProps={{
                 keepMounted: true
-                //   disablePortal: true
             }}
             sx={{
                 "& .MuiDrawer-paper": {
-                    height: `calc(100vh - ${drawerBleeding}px)`
-                    // overflow: "auto"
+                    height: `calc(100vh - ${drawerBleeding + 50}px)`
                 },
                 zIndex: DRAWER_ZI
             }}
@@ -70,7 +66,9 @@ export default function SwipeableEdgeDrawer() {
             SwipeAreaProps={{
                 sx: {
                     zIndex: DRAWER_ZI - 1
-                }
+                },
+                // TODO
+                // onClick: () => setOpen(true)
             }}
         >
             <Global
@@ -81,24 +79,22 @@ export default function SwipeableEdgeDrawer() {
                     }
                 }}
             />
-            <StyledBox
+            <Paper
+                elevation={6}
                 sx={{
                     position: "absolute",
-                    top: -drawerBleeding,
+                    top: -drawerBleeding /*+ 1*/ /* no idea why this is necessary but it removes a weird gap */,
                     borderTopLeftRadius: 8,
                     borderTopRightRadius: 8,
                     visibility: "visible",
                     right: 0,
                     left: 0,
                     overflow: disableBoxScroll || !open ? "hidden" : "auto",
-                    maxHeight: "100vh"
+                    maxHeight: "100vh",
+                    minHeight: `calc(100% + ${drawerBleeding}px)`
                 }}
                 ref={drawerBoxRef}
                 onTouchMove={(e) => {
-                    // console.log("Touch move", e);
-                    // console.log(drawerBoxRef.current.scrollTop);
-                    // console.log(drawerRef);
-
                     const thisCoords: Coords = [
                         e.touches[0].clientX,
                         e.touches[0].clientY
@@ -123,7 +119,7 @@ export default function SwipeableEdgeDrawer() {
                         scrollLocked = true;
                         setDisableBoxScroll(true);
                     } else if (
-                        drawerRef.current!.querySelector(".MuiBackdrop-root")
+                        (drawerRef.current!.querySelector(".MuiBackdrop-root") as HTMLElement)
                             .style.opacity === "1"
                     ) {
                         // The thing is all the way at the top
@@ -142,12 +138,77 @@ export default function SwipeableEdgeDrawer() {
                 }}
             >
                 <Puller />
-                <Typography sx={{ p: 2, color: "text.secondary" }}>
+
+                <DrawerContents open={open} />
+
+                {/* <Typography sx={{ p: 2, color: "text.secondary" }}>
                     51 resultstsratrs
-                </Typography>
-                <Skeleton variant="rectangular" height="200vh" />
-            </StyledBox>
+                </Typography> */}
+                {/* <Skeleton variant="rectangular" height="200vh" /> */}
+            </Paper>
         </SwipeableDrawer>
         // </Root>
     );
+}
+
+function DrawerContents(props: {
+    open: boolean
+}) {
+    const {
+        playerAlbum,
+        playerTrack
+    } = useStore(["playerState", "playerAlbum", "playerTrack"]);
+
+    const { albums } = useStorage(["albums"]);
+
+    const playerAlbumObj = usePlayerAlbumObj({ playerAlbum, albums });
+
+    return (playerAlbumObj && playerTrack !== null) ? (
+        <Box sx={{
+            width: "100%",
+            height: drawerBleeding,
+            display: "flex",
+            justifyContent: "center"
+        }}>
+            <Box
+                component="img"
+                src={playerAlbumObj.data.imageUrl}
+                sx={{
+                    height: "100%"
+                }}
+            />
+            <Box sx={{
+                flex: 1,
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                marginLeft: "0.5rem"
+            }}>
+                {/* <Typography variant="body1">
+                    {playerAlbumObj.data.tracks[playerTrack].title}
+                </Typography>
+                <Typography variant="body2">
+                    <b>{playerAlbumObj.data.title}</b> by {playerAlbumObj.data.artist}
+                </Typography> */}
+                <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                    {playerAlbumObj.data.artist}
+                </Typography>
+                <Typography sx={{ fontWeight: "bold" }}>
+                    {playerAlbumObj.data.title}
+                </Typography>
+                <Typography letterSpacing={-0.25}>
+                    {playerAlbumObj.data.tracks[playerTrack].title}
+                </Typography>
+            </Box>
+            <PlayButton sx={{
+                pointerEvents: "auto"
+            }}/>
+            <TrackControls sx={{
+                pointerEvents: "auto"
+            }} />
+        </Box>
+    ) : null;
 }
