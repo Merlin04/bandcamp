@@ -1,3 +1,5 @@
+import proxyUrl from "~/contentScripts/comms";
+
 export interface ArtistPageAlbum {
     name: string,
     relUrl: string | undefined,
@@ -24,7 +26,8 @@ export interface AlbumData {
         url: string,
         title: string,
         pageUrl: string
-    }[]
+    }[],
+    tags: string[]
 }
 
 interface BCDataBand {
@@ -62,7 +65,7 @@ interface BCDataTralbum {
     url: string
 }
 
-export function scrapeArtist(): ArtistData {
+export function scrapeArtist(document: Document = globalThis.document): ArtistData {
     const bandDataJson = document.querySelector("[data-band]")?.getAttribute("data-band");
     if (!bandDataJson) {
         throw new Error("Could not find band data");
@@ -92,14 +95,15 @@ export function scrapeArtist(): ArtistData {
     }
 }
 
-export function scrapeAlbum(): AlbumData {
+export function scrapeAlbum(document: Document = globalThis.document): AlbumData {
     const tralbumDataJson = document.querySelector("[data-tralbum]")?.getAttribute("data-tralbum");
     if (!tralbumDataJson) {
         throw new Error("Could not find tralbum data");
     }
     const tralbumData = JSON.parse(tralbumDataJson) as BCDataTralbum;
 
-    console.log(tralbumData);
+    const tags = Array.from(document.getElementsByClassName("tralbumData tralbum-tags tralbum-tags-nu")[0].children)
+        .filter(e => e.tagName === "A").map((e) => (e as HTMLElement).innerText);
 
     return {
         artist: tralbumData.artist,
@@ -114,7 +118,8 @@ export function scrapeAlbum(): AlbumData {
             url: t.file['mp3-128'],
             title: t.title,
             pageUrl: t.title_link
-        }))
+        })),
+        tags
     }
 }
 
@@ -133,3 +138,8 @@ function getPageType() {
 export const pageType = getPageType();
 
 export const thisData = pageType === PageType.Artist ? scrapeArtist() : pageType === PageType.Album ? scrapeAlbum() : null;
+
+export async function scrapeAlbumUrl(url: string): Promise<AlbumData> {
+    const { data: docText } = await proxyUrl(url);
+    return scrapeAlbum(new DOMParser().parseFromString(docText, "text/html"));
+}

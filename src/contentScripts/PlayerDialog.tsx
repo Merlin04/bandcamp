@@ -1,30 +1,23 @@
-import { KeyboardArrowDown, Pause, PlayArrow } from "@mui/icons-material";
-import { AppBar, Box, Dialog, DialogContent, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Stack, Toolbar, Typography } from "@mui/material";
-import React, { useMemo } from "react";
+import { KeyboardArrowDown} from "@mui/icons-material";
+import { AppBar, Box, Dialog, DialogContent, IconButton, Stack, Toolbar, Typography } from "@mui/material";
+import React from "react";
 import { Transition } from "./AppDialog";
 import { DrawerSpacer } from "./Drawer";
-import Player, { formatDuration, usePlayerAlbumObj } from "./Player";
-import { Album, PlayerState, setState, useStorage, useStore } from "./state";
+import {PlayerWidget, usePlayerAlbumObj} from "./Player";
+import { setState, useStorage, useStore } from "./state";
 import { PLAYER_DIALOG_ZI } from "./zIndices";
 
 export default function PlayerDialog() {
     const {
         playerDialogOpen,
         playerAlbum,
-        playerTrack,
-        playerState
-    } = useStore(["playerDialogOpen", "playerAlbum", "playerTrack", "playerState"]);
+        playerDialogAlbum,
+        playerTrack
+    } = useStore(["playerDialogOpen", "playerAlbum", "playerDialogAlbum", "playerTrack", "playerState"]);
     const { albums } = useStorage(["albums"]);
 
-    console.log("Player dialog render", {
-        playerDialogOpen,
-        playerAlbum,
-        playerTrack,
-        playerState
-    })
-
     const playerAlbumObj = usePlayerAlbumObj({
-        playerAlbum, albums
+        playerAlbum: playerDialogAlbum, albums
     });
 
     return !playerAlbumObj ? null : (
@@ -37,9 +30,6 @@ export default function PlayerDialog() {
             sx={{
                 zIndex: PLAYER_DIALOG_ZI
             }}
-            // BackdropComponent={() => <></>}
-            // hideBackdrop
-            // disableEnforceFocus
         >
             <AppBar sx={{
                 position: "relative"
@@ -88,7 +78,7 @@ export default function PlayerDialog() {
                                 </Typography>}
                             </Box>
                         </Box>
-                        <Player />
+                        <PlayerWidget album={playerDialogAlbum!} />
                     </Box>
 
 
@@ -115,40 +105,6 @@ export default function PlayerDialog() {
 
                     <Player /> */}
 
-                    <List dense>
-                        {playerAlbumObj.data.tracks.map((track, i) => (
-                            <ListItem key={i} disablePadding>
-                                <ListItemButton
-                                    role={undefined}
-                                    dense
-                                    aria-label={`${playerTrack === i && playerState === PlayerState.PLAYING ? "pause" : "play"} track ${i + 1}`}
-                                    onClick={() => {
-                                        setState({
-                                            playerTrack: i,
-                                            playerState: playerTrack === i && playerState === PlayerState.PLAYING ? PlayerState.PAUSED : PlayerState.PLAYING
-                                        });
-                                    }}                                    
-                                >
-                                    <ListItemIcon>
-                                        {playerTrack === i && playerState === PlayerState.PLAYING ? <Pause /> : <PlayArrow />}
-                                    </ListItemIcon>
-                                    <ListItemText>
-                                        <Typography component="span" variant="body1" sx={{
-                                            color: "textSecondary"
-                                        }}>
-                                            {`${i + 1}. `}
-                                        </Typography>
-                                        <Typography component="span" variant="body1">{track.title}</Typography>
-                                        <Typography component="span" variant="body1" color="textSecondary" sx={{
-                                            marginLeft: "0.5rem"
-                                        }}>
-                                            {formatDuration(track.duration)}
-                                        </Typography>
-                                    </ListItemText>
-                                </ListItemButton>
-                            </ListItem>
-                        ))}
-                    </List>
 
                     <Typography variant="h6">Description</Typography>
 
@@ -165,7 +121,9 @@ export default function PlayerDialog() {
                     </Typography>
                 </Stack>
             </DialogContent>
-            <DrawerSpacer />
+            {playerDialogAlbum !== playerAlbum && (
+                <DrawerSpacer />
+            )}
         </Dialog>
     )
 }

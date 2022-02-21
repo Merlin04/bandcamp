@@ -26,7 +26,8 @@ const Puller = styled(Box)(({ theme }) => ({
     borderRadius: 3,
     position: "absolute",
     top: 8,
-    left: "calc(50% - 15px)"
+    left: "calc(50% - 15px)",
+    zIndex: 10
 }));
 
 let scrollLocked = false;
@@ -44,6 +45,7 @@ export default function SwipeableEdgeDrawer() {
     const drawerRef = React.useRef<HTMLDivElement>(null);
 
     const [disableBoxScroll, setDisableBoxScroll] = React.useState(false);
+    const [innerDrawerOpen, setInnerDrawerOpen] = React.useState(false);
 
     return (
         <SwipeableDrawer
@@ -69,6 +71,12 @@ export default function SwipeableEdgeDrawer() {
                 },
                 // TODO
                 // onClick: () => setOpen(true)
+            }}
+            onPercentOpenUpdate={(newPercentOpen: number) => {
+                drawerRef.current?.style.setProperty("--drawer-percent-open", `${newPercentOpen}`);
+            }}
+            onInnerDrawerOpenUpdate={(newInnerDrawerOpen: boolean) => {
+                setInnerDrawerOpen(newInnerDrawerOpen);
             }}
         >
             <Global
@@ -139,7 +147,7 @@ export default function SwipeableEdgeDrawer() {
             >
                 <Puller />
 
-                <DrawerContents open={open} />
+                <DrawerContents open={open} innerDrawerOpen={innerDrawerOpen} />
 
                 {/* <Typography sx={{ p: 2, color: "text.secondary" }}>
                     51 resultstsratrs
@@ -151,9 +159,22 @@ export default function SwipeableEdgeDrawer() {
     );
 }
 
-function DrawerContents(props: {
-    open: boolean
+const mapNum = (num: number, in_min: number, in_max: number, out_min: number, out_max: number) => {
+    return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+};
+
+// use CSS calc function to do mapping
+const cssMapNum = (num: number | string, in_min: number | string, in_max: number | string, out_min: number | string, out_max: number | string) => {
+    return `calc(calc(calc(calc(${num} - ${in_min}) * calc(${out_max} - ${out_min})) / calc(${in_max} - ${in_min})) + ${out_min})`;
+};
+
+function DrawerContents({ open, innerDrawerOpen }: {
+    // True if the drawer is completely open, false otherwise
+    open: boolean,
+    // If the drawer is anything other than completely closed
+    innerDrawerOpen: boolean
 }) {
+    console.log("drawer open state", { open, innerDrawerOpen });
     const {
         playerAlbum,
         playerTrack
@@ -170,45 +191,59 @@ function DrawerContents(props: {
             display: "flex",
             justifyContent: "center"
         }}>
-            <Box
-                component="img"
-                src={playerAlbumObj.data.imageUrl}
-                sx={{
-                    height: "100%"
-                }}
-            />
             <Box sx={{
-                flex: 1,
-                textOverflow: "ellipsis",
-                overflow: "hidden",
-                whiteSpace: "nowrap",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                marginLeft: "0.5rem"
+                width: drawerBleeding,
+                zIndex: 1
             }}>
-                {/* <Typography variant="body1">
+                <Box
+                    component="img"
+                    src={playerAlbumObj.data.imageUrl}
+                    sx={{
+                        position: "absolute",
+                        width: open ? "100vw" : !innerDrawerOpen ? drawerBleeding : cssMapNum("var(--drawer-percent-open)", 0, 1, drawerBleeding + "px", "100vw"),
+                    }}
+                />
+            </Box>
+            <Box sx={{
+                height: "100%",
+                display: "flex",
+                justifyContent: "center",
+                opacity: open ? 0 : !innerDrawerOpen ? 1 : "calc(1 - var(--drawer-percent-open))",
+                flex: 1
+            }}>
+                <Box sx={{
+                    flex: 1,
+                    textOverflow: "ellipsis",
+                    overflow: "hidden",
+                    whiteSpace: "nowrap",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    marginLeft: "0.5rem"
+                }}>
+                    {/* <Typography variant="body1">
                     {playerAlbumObj.data.tracks[playerTrack].title}
                 </Typography>
                 <Typography variant="body2">
                     <b>{playerAlbumObj.data.title}</b> by {playerAlbumObj.data.artist}
                 </Typography> */}
-                <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                    {playerAlbumObj.data.artist}
-                </Typography>
-                <Typography sx={{ fontWeight: "bold" }}>
-                    {playerAlbumObj.data.title}
-                </Typography>
-                <Typography letterSpacing={-0.25}>
-                    {playerAlbumObj.data.tracks[playerTrack].title}
-                </Typography>
+                    <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                        {playerAlbumObj.data.artist}
+                    </Typography>
+                    <Typography sx={{ fontWeight: "bold" }}>
+                        {playerAlbumObj.data.title}
+                    </Typography>
+                    <Typography letterSpacing={-0.25}>
+                        {playerAlbumObj.data.tracks[playerTrack].title}
+                    </Typography>
+                </Box>
+                <PlayButton sx={{
+                    pointerEvents: "auto"
+                }}/>
+                <TrackControls sx={{
+                    pointerEvents: "auto"
+                }} />
             </Box>
-            <PlayButton sx={{
-                pointerEvents: "auto"
-            }}/>
-            <TrackControls sx={{
-                pointerEvents: "auto"
-            }} />
         </Box>
     ) : null;
 }

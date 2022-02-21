@@ -31,6 +31,7 @@ import PlayerDialog from "./PlayerDialog";
 import SwipeableEdgeDrawer, { DrawerSpacer } from "./Drawer";
 import { BASE_ZI } from "./zIndices";
 import { Portal } from "@mui/base";
+import ErrorBoundary from "~/contentScripts/ErrorBoundary";
 
 export const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -69,96 +70,98 @@ export default function AppDialog() {
                     zIndex: BASE_ZI
                 }}
             >
-                <AppBar
-                    sx={{
-                        position: "relative",
-                        transition:
-                            "box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, background-color 0.2s ease-in-out",
-                        "& > *:nth-child(2)": {
-                            position: "absolute"
-                        },
-                        "& > *": {
-                            minWidth: "calc(100% - 32px)"
-                        }
-                    }}
-                    color={
-                        deleteAlbumsMode ? ("warning" as "primary") : "primary"
-                    }
-                >
-                    {/* <Toolbar> */}
-                    <Fade in={deleteAlbumsMode} unmountOnExit>
-                        <Toolbar>
-                            <IconButton
-                                edge="start"
-                                color="inherit"
-                                onClick={() => {
-                                    setState({
-                                        deleteAlbumsMode: false,
-                                        selectedAlbums: []
-                                    });
-                                }}
-                                aria-label="exit remove albums mode"
-                            >
-                                <CloseIcon />
-                            </IconButton>
-                            <Typography
-                                sx={{ ml: 2, flex: 1 }}
-                                variant="h6"
-                                component="div"
-                            >
-                                {selectedAlbums.length}
-                            </Typography>
-                            <DeleteSelectedItemsButton />
-                        </Toolbar>
-                    </Fade>
-                    <Fade in={!deleteAlbumsMode} unmountOnExit>
-                        <Toolbar>
-                            <IconButton
-                                edge="start"
-                                color="inherit"
-                                onClick={() => setOpen(false)}
-                                aria-label="close"
-                            >
-                                <CloseIcon />
-                            </IconButton>
-                            <Typography
-                                sx={{ ml: 2, flex: 1 }}
-                                variant="h6"
-                                component="div"
-                            >
-                                Bandcamp Collector
-                            </Typography>
-                            <ActionsMenu />
-                            <IconButton
-                                edge="end"
-                                color="inherit"
-                                onClick={() =>
-                                    setState({ deleteAlbumsMode: true })
-                                }
-                                aria-label="remove albums"
-                            >
-                                <PlaylistRemove />
-                            </IconButton>
-                        </Toolbar>
-                    </Fade>
-                    {/* </Toolbar> */}
-                </AppBar>
-                <DialogContent>
-                    {pageType === PageType.Album && <AddThisAlbum />}
-                    <Albums />
-                    <DrawerSpacer />
-                </DialogContent>
-                {/* <MiniPlayer /> */}
-                <PlayerDialog />
-                {(playerState !== PlayerState.INACTIVE) && !(playerDialogOpen && playerAlbum === playerDialogAlbum) && (
-                    <Portal
-                        container={() =>
-                            window._BANDCAMP_COLLECTOR_SHADOW_DOM.children[0]
+                <ErrorBoundary>
+                    <AppBar
+                        sx={{
+                            position: "relative",
+                            transition:
+                                "box-shadow 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, background-color 0.2s ease-in-out",
+                            "& > *:nth-child(2)": {
+                                position: "absolute"
+                            },
+                            "& > *": {
+                                minWidth: "calc(100% - 32px)"
+                            }
+                        }}
+                        color={
+                            deleteAlbumsMode ? ("warning" as "primary") : "primary"
                         }
                     >
-                        <SwipeableEdgeDrawer />
-                    </Portal>                
-                )}
+                        {/* <Toolbar> */}
+                        <Fade in={deleteAlbumsMode} unmountOnExit>
+                            <Toolbar>
+                                <IconButton
+                                    edge="start"
+                                    color="inherit"
+                                    onClick={() => {
+                                        setState({
+                                            deleteAlbumsMode: false,
+                                            selectedAlbums: []
+                                        });
+                                    }}
+                                    aria-label="exit remove albums mode"
+                                >
+                                    <CloseIcon />
+                                </IconButton>
+                                <Typography
+                                    sx={{ ml: 2, flex: 1 }}
+                                    variant="h6"
+                                    component="div"
+                                >
+                                    {selectedAlbums.length}
+                                </Typography>
+                                <DeleteSelectedItemsButton />
+                            </Toolbar>
+                        </Fade>
+                        <Fade in={!deleteAlbumsMode} unmountOnExit>
+                            <Toolbar>
+                                <IconButton
+                                    edge="start"
+                                    color="inherit"
+                                    onClick={() => setOpen(false)}
+                                    aria-label="close"
+                                >
+                                    <CloseIcon />
+                                </IconButton>
+                                <Typography
+                                    sx={{ ml: 2, flex: 1 }}
+                                    variant="h6"
+                                    component="div"
+                                >
+                                    Bandcamp Collector
+                                </Typography>
+                                <ActionsMenu />
+                                <IconButton
+                                    edge="end"
+                                    color="inherit"
+                                    onClick={() =>
+                                        setState({ deleteAlbumsMode: true })
+                                    }
+                                    aria-label="remove albums"
+                                >
+                                    <PlaylistRemove />
+                                </IconButton>
+                            </Toolbar>
+                        </Fade>
+                        {/* </Toolbar> */}
+                    </AppBar>
+                    <DialogContent>
+                        {pageType === PageType.Album && <AddThisAlbum />}
+                        <Albums />
+                        <DrawerSpacer />
+                    </DialogContent>
+                    {/* <MiniPlayer /> */}
+                    <PlayerDialog />
+                    {(playerState !== PlayerState.INACTIVE) && !(playerDialogOpen && playerAlbum === playerDialogAlbum) && (
+                        <Portal
+                            container={() =>
+                                window._BANDCAMP_COLLECTOR_SHADOW_DOM.children[0]
+                            }
+                        >
+                            <SwipeableEdgeDrawer />
+                        </Portal>
+                    )}
+                </ErrorBoundary>
             </Dialog>
         </>
     );

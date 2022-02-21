@@ -1,8 +1,10 @@
-import { Box, ButtonBase, Checkbox, InputAdornment, TextField, Typography } from "@mui/material";
+import {Box, ButtonBase, Checkbox, Chip, CircularProgress, InputAdornment, TextField, Typography, BoxProps} from "@mui/material";
 import Fuse from "fuse.js";
-import { Album, PlayerState, setState, useStorage, useStore } from "./state";
+import {Album, setState, setStorage, useStorage, useStore} from "./state";
 import React, { useMemo, useState } from "react";
 import { Search } from "@mui/icons-material";
+import {scrapeAlbumUrl} from "~/contentScripts/scraper";
+import {LayoutGroup, motion} from "framer-motion";
 
 export default function Albums() {
     const [searchText, setSearchText] = useState("");
@@ -61,6 +63,9 @@ export default function Albums() {
                     width: "100%"
                 }}
             />
+            <TagFilterer onChange={() => {}} sx={{
+                mt: 2
+            }} />
             <Box sx={{
                 "& > *": {
                     marginTop: "2rem"
@@ -87,6 +92,110 @@ export default function Albums() {
     );
 }
 
+function TagFilterer({ onChange, sx, ...boxProps }: {
+    onChange: (albums: Album[]) => void
+} & BoxProps) {
+    const { albums } = useStorage(["albums"]);
+    const tagList = useMemo(() => {
+        const tags = new Set<string>();
+        for (const album of albums) {
+            for (const tag of album.tags) {
+                tags.add(tag);
+            }
+        }
+        return Array.from(tags).sort();
+    }, [albums]);
+
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+    // Make the tag list but split it into one array of selected tags and one of unselected tags
+    const [selected, unselected] = useMemo(() => (
+        tagList.reduce<[JSX.Element[], JSX.Element[]]>(([selected, unselected], tag) => {
+            const chip = (
+                <Chip
+                    component={motion.div}
+                    layout
+                    layoutId={`tag-${tag}`}
+                    variant="outlined"
+                    // variant={(selectedTags.includes(tag)) ? "filled" : "outlined"}
+                    key={tag}
+                    label={tag}
+                    onClick={() => {
+                        const newSelectedTags = selectedTags.includes(tag)
+                            ? selectedTags.filter(t => t !== tag)
+                            : [...selectedTags, tag];
+                        setSelectedTags(newSelectedTags);
+                        onChange(
+                            albums.filter(album => album.data.tags.includes(tag))
+                        );
+                    }}
+                    sx={{
+                        zIndex: selectedTags.includes(tag) ? 1 : 0,
+                        backgroundColor: (selectedTags.includes(tag)) ? "#ebebeb" : "#ffffff",
+                        transition: "backgroundColor 0.2s ease-in-out"
+                    }}
+                    // initial="unselected"
+                    // animate={selectedTags.includes(tag) ? "selected" : "unselected"}
+                    // variants={{
+                    //     unselected: {
+                    //         backgroundColor: "#ffffff",
+                    //         transition: {
+                    //             when: "afterChildren"
+                    //         }
+                    //     },
+                    //     selected: {
+                    //         backgroundColor: "#ebebeb",
+                    //         transition: {
+                    //             when: "beforeChildren"
+                    //         }
+                    //     }
+                    // }}
+                    // animate={{
+                    //     backgroundColor: (selectedTags.includes(tag)) ? "#ebebeb" : "#ffffff"
+                    // }}
+                    // transition={{
+                    //     backgroundColor: {
+                    //         duration: 0.2
+                    //     }
+                    // }}
+                />
+            );
+            selectedTags.includes(tag) ? selected.push(chip) : unselected.push(chip);
+
+            return [selected, unselected];
+        }, [[], []])
+    ), [tagList, selectedTags]);
+
+    return (
+        <Box sx={{
+            // "& .MuiChip-root": {
+            //     marginRight: "8px",
+            //     marginBottom: "8px"
+            // }
+            "& > *": {
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px"
+            },
+            "& .MuiChip-root": {
+                // backgroundColor: "#ffffff"
+            },
+            ...sx
+        }} {...boxProps}>
+            <LayoutGroup>
+                <Box component={motion.div} sx={{
+                    mb: selectedTags.length > 0 ? "1rem" : 0
+                }}>
+                    {selected}
+                </Box>
+                <Box component={motion.div}>
+                    {unselected}
+                </Box>
+            </LayoutGroup>
+        </Box>
+    )
+}
+
 function AlbumGrid({ albums, isSearch }: { albums: Album[], isSearch?: boolean }) {
     return (
         <Box
@@ -103,8 +212,13 @@ function AlbumGrid({ albums, isSearch }: { albums: Album[], isSearch?: boolean }
     );
 }
 
+//const BANDCAMP_DATA_EXPIRY = /* 1 day, converted to milliseconds */ 86400000;
+const BANDCAMP_DATA_EXPIRY = /* 1 second, converted to milliseconds */ 1000;
+
 function Album({ album, isSearch }: { album: Album, isSearch?: boolean }) {
     const { deleteAlbumsMode, selectedAlbums, playerAlbum } = useStore(["deleteAlbumsMode", "selectedAlbums", "playerAlbum"]);
+    const { albums } = useStorage(["albums"]);
+    const [loading, setLoading] = useState(false);
 
     const checked = deleteAlbumsMode && selectedAlbums.includes(album.data.url);
 
@@ -115,27 +229,45 @@ function Album({ album, isSearch }: { album: Album, isSearch?: boolean }) {
             justifyContent: "start",
             textAlign: "start"
         }} onClick={(e) => {
-            // if(deleteAlbumsMode) {
-            //     e.preventDefault();
-            //     setState({
-            //         selectedAlbums: checked
-            //             ? selectedAlbums.filter((url) => url !== album.data.url)
-            //             : [...selectedAlbums, album.data.url]
-            //     });
-            // }
             e.preventDefault();
 
-            if(playerAlbum === album.data.url) {
+            if(deleteAlbumsMode) {
                 setState({
-                    playerDialogOpen: true
+                    selectedAlbums: checked
+                        ? selectedAlbums.filter((url) => url !== album.data.url)
+                        : [...selectedAlbums, album.data.url]
                 });
             } else {
-                setState({
-                    playerDialogAlbum: album.data.url,
-                    // playerTrack: 0,
-                    playerDialogOpen: true,
-                    // playerState: PlayerState.PAUSED
-                });    
+                const openAlbum = () => {
+                    if(playerAlbum === album.data.url) {
+                        setState({
+                            playerDialogOpen: true
+                        });
+                    } else {
+                        setState({
+                            playerDialogAlbum: album.data.url,
+                            // playerTrack: 0,
+                            playerDialogOpen: true,
+                            // playerState: PlayerState.PAUSED
+                        });
+                    }
+                };
+
+                const isExpired = album.lastUpdated + BANDCAMP_DATA_EXPIRY < Date.now();
+                if(isExpired) {
+                    console.log("Scraping album data...");
+                    setLoading(true);
+                    scrapeAlbumUrl(album.data.url).then((newAlbumData) => {
+                        console.log("Scraped album data", newAlbumData);
+                        setStorage({
+                            albums: albums.map(a => a.data.url === album.data.url ? { ...album, data: newAlbumData } : a)
+                        });
+                        openAlbum();
+                        setLoading(false);
+                    });
+                } else {
+                    openAlbum();
+                }
             }
         }} onContextMenu={(e) => {
             // Tapping and holding on mobile
@@ -144,9 +276,22 @@ function Album({ album, isSearch }: { album: Album, isSearch?: boolean }) {
                 deleteAlbumsMode: true,
                 selectedAlbums: [album.data.url]
             });
-        }} /*{...(deleteAlbumsMode ? {} : {
-            href: album.data.url + "?bc-collector"
-        })}*/>
+        }} disabled={loading}>
+            {loading && (
+                <Box sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "rgba(255, 255, 255, 0.5)",
+                }}>
+                    <CircularProgress />
+                </Box>
+            )}
             {deleteAlbumsMode && (
                 <Checkbox checked={checked} sx={{
                     pointerEvents: "none",
@@ -156,8 +301,6 @@ function Album({ album, isSearch }: { album: Album, isSearch?: boolean }) {
                     padding: "4px",
                     marginLeft: "8px",
                     marginTop: "8px",
-                    // backgroundColor: checked ? "#1976d2" : "transparent",
-                    // border: checked ? "none" : "2px solid rgba(0, 0, 0, 0.54)"
                 }} />
             )}
             <Box

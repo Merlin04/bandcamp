@@ -1,4 +1,4 @@
-import { Alert, Button, SnackbarContent } from "@mui/material";
+import { Alert, Button } from "@mui/material";
 import { useMemo } from "react";
 import { setStorage, useStorage } from "./state";
 import React from "react";
@@ -19,7 +19,8 @@ export default function AddThisAlbum() {
                         ...albums,
                         {
                             data: thisData as AlbumData,
-                            tags: []
+                            tags: (thisData as AlbumData).tags,
+                            lastUpdated: new Date().getTime()
                         }
                     ]
                 })

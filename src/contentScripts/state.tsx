@@ -17,12 +17,14 @@ export const [useStore, setState] = createState({
     playerAlbum: null as null | string,
     playerTrack: null as null | number,
     playerDialogOpen: false,
-    playerDialogAlbum: null as null | string
+    playerDialogAlbum: null as null | string,
+    audioCurrentTime: 0
 });
 
 export type Album = {
     data: AlbumData,
-    tags: string[]
+    tags: string[],
+    lastUpdated: number
 }
 
 type StorageValue = {

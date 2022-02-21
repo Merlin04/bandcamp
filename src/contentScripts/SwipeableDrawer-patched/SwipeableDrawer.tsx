@@ -96,6 +96,11 @@ export interface SwipeableDrawerProps extends Omit<DrawerProps, 'onClose' | 'ope
    * @default 20
    */
   swipeAreaWidth?: number;
+  /**
+   * Callback for drawer percent open change.
+   */
+  onPercentOpenUpdate?: (percentOpen: number) => void;
+  onInnerDrawerOpenUpdate?: (open: boolean) => void;
 }
 
 // This value is closed to what browsers are using internally to
@@ -250,6 +255,8 @@ const SwipeableDrawer: React.JSXElementConstructor<SwipeableDrawerProps> = React
     swipeAreaWidth = 20,
     transitionDuration = transitionDurationDefault,
     variant = 'temporary', // Mobile first.
+      onPercentOpenUpdate = undefined,
+      onInnerDrawerOpenUpdate = undefined,
     ...other
   } = props;
 
@@ -313,6 +320,9 @@ const SwipeableDrawer: React.JSXElementConstructor<SwipeableDrawerProps> = React
       if (!disableBackdropTransition && !hideBackdrop) {
         const backdropStyle = backdropRef.current.style;
         backdropStyle.opacity = 1 - translate / getMaxTranslate(horizontalSwipe, paperRef.current);
+        if(onPercentOpenUpdate) {
+          onPercentOpenUpdate(backdropStyle.opacity);
+        }
 
         if (changeTransition) {
           backdropStyle.webkitTransition = transition;
@@ -639,10 +649,20 @@ const SwipeableDrawer: React.JSXElementConstructor<SwipeableDrawerProps> = React
     }
   }, [open]);
 
+  const innerDrawerOpen = variant === 'temporary' && maybeSwiping ? true : open;
+
+  React.useEffect(() => {
+    if(onInnerDrawerOpenUpdate) {
+      onInnerDrawerOpenUpdate(innerDrawerOpen);
+    }
+  }, [innerDrawerOpen]);
+
+  console.log("maybeswiping", maybeSwiping);
+
   return (
     <React.Fragment>
       <Drawer
-        open={variant === 'temporary' && maybeSwiping ? true : open}
+        open={innerDrawerOpen}
         variant={variant}
         ModalProps={{
           BackdropProps: {
