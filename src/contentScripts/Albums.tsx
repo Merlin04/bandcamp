@@ -103,7 +103,8 @@ function TagFilterer({ onChange, sx, ...boxProps }: {
                 tags.add(tag);
             }
         }
-        return Array.from(tags).sort();
+        // Sort the tags alphabetically, ignoring case
+        return Array.from(tags).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
     }, [albums]);
 
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -168,23 +169,21 @@ function TagFilterer({ onChange, sx, ...boxProps }: {
 
     return (
         <Box sx={{
-            // "& .MuiChip-root": {
-            //     marginRight: "8px",
-            //     marginBottom: "8px"
-            // }
             "& > *": {
                 display: "flex",
                 flexWrap: "wrap",
                 gap: "8px"
             },
-            "& .MuiChip-root": {
-                // backgroundColor: "#ffffff"
-            },
             ...sx
         }} {...boxProps}>
             <LayoutGroup>
                 <Box component={motion.div} sx={{
-                    mb: selectedTags.length > 0 ? "1rem" : 0
+                    ...(selectedTags.length > 0 && {
+                        paddingBottom: "1rem",
+                        marginBottom: "1rem",
+                        borderBottom: "1px solid #ebebeb"
+                    }),
+                    transition: "paddingBottom 0.2s ease-in-out, marginBottom 0.2s ease-in-out, borderBottom 0.2s ease-in-out"
                 }}>
                     {selected}
                 </Box>
