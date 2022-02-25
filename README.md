@@ -1,3 +1,24 @@
+# Bandcamp Collector
+
+(WORK IN PROGRESS)
+
+Web extension to add an alternative player UI to Bandcamp album pages, allowing you to easily save albums to your library, navigate between albums in a single page app, and avoid some of Bandcamp's jank
+
+### Ok that's cool and all but what is this horrendous bundling system
+
+I got tired of Vite taking 25 seconds to bundle the content script and all of its dependencies every time I changed a file, so I spent multiple days creating this. Dependencies are bundled (supposedly) whenever `package.json` changes using [a complicated Rollup config](rollup.config.content.deps.ts), sending each module into a separate JS file (`/modules/[module name].js`, kind of like `node_modules`) and Babel transpiles the actual content script code whenever that changes, using a custom Babel plugin to transform imports to use the new `modules` folder. 
+
+Also, content scripts don't support ES Modules so Babel and Rollup are outputting SystemJS modules, and [I completely rewrote the SystemJS loader](extension/assets/index.js) to work in a web extension content script
+
+I am sorry
+
+
+
+
+
+# `vitesse-webext` stuff
+Lots of this doesn't apply anymore since I stripped out Vue and have the weird bundling system
+
 # WebExtension Vite Starter
 
 A [Vite](https://vitejs.dev/) powered WebExtension ([Chrome](https://developer.chrome.com/docs/extensions/reference/), [FireFox](https://addons.mozilla.org/en-US/developers/), etc.) starter template.
