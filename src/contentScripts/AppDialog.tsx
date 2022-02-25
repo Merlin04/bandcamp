@@ -10,8 +10,7 @@ import {
     Toolbar,
     Typography
 } from "@mui/material";
-import { TransitionProps } from "@mui/material/transitions";
-import CloseIcon from "@mui/icons-material/Close";
+import type { TransitionProps } from "@mui/material/transitions";
 import React, { useState } from "react";
 import {
     defaultStorageValue,
@@ -25,13 +24,13 @@ import { setOpen } from "./App";
 import AddThisAlbum from "./AddThisAlbum";
 import { PageType, pageType } from "./scraper";
 import Albums from "./Albums";
-import { Delete, MoreVert, PlaylistRemove } from "@mui/icons-material";
+import { Delete, MoreVert, PlaylistRemove, Close as CloseIcon } from "@mui/icons-material";
 import MiniPlayer from "./MiniPlayer";
 import PlayerDialog from "./PlayerDialog";
 import SwipeableEdgeDrawer, { DrawerSpacer } from "./Drawer";
 import { BASE_ZI } from "./zIndices";
 import { Portal } from "@mui/base";
-import ErrorBoundary from "~/contentScripts/ErrorBoundary";
+import ErrorBoundary from "./ErrorBoundary";
 
 export const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {

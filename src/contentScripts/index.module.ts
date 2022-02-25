@@ -7,6 +7,7 @@ declare global {
 }
 
 // Firefox `browser.tabs.executeScript()` requires scripts return a primitive value
+// If this is being loaded as a System module then this is pointless but it might be bundled using Rollup so keep it anyway
 (async function () {
     // Yeah sure that works
     const isBandcamp = document.querySelector("a[href='https://bandcamp.com/terms_of_use']");

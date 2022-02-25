@@ -1,6 +1,6 @@
 //@ts-nocheck
 
-import * as React from 'react';
+import React from 'react';
 import clsx from 'clsx';
 import { capitalize, styled } from '@mui/material';
 

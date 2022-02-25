@@ -1,0 +1,19 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "firefox": "90"
+        },
+        "modules": "systemjs"
+      }
+    ],
+    "@babel/preset-typescript",
+    "@babel/preset-react"
+  ],
+  "plugins": [
+    "./babel-plugin-transform-imports.mjs"
+  ],
+  "sourceMaps": true
+}

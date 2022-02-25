@@ -37,7 +37,7 @@ if (isDev) {
     .on('change', () => {
       stubIndexHtml()
     })
-  chokidar.watch([r('src/manifest.ts'), r('package.json')])
+  chokidar.watch([r('src/manifest.ts'), r('package.json'), r('extension/dist/contentScripts/**/*')])
     .on('change', () => {
       writeManifest()
     })

@@ -3,7 +3,7 @@ import Fuse from "fuse.js";
 import {Album, setState, setStorage, useStorage, useStore} from "./state";
 import React, { useMemo, useState } from "react";
 import { Search } from "@mui/icons-material";
-import {scrapeAlbumUrl} from "~/contentScripts/scraper";
+import {scrapeAlbumUrl} from "./scraper";
 import {LayoutGroup, motion} from "framer-motion";
 
 export default function Albums() {
@@ -118,7 +118,6 @@ function TagFilterer({ onChange, sx, ...boxProps }: {
                     layout
                     layoutId={`tag-${tag}`}
                     variant="outlined"
-                    // variant={(selectedTags.includes(tag)) ? "filled" : "outlined"}
                     key={tag}
                     label={tag}
                     onClick={() => {
@@ -135,30 +134,6 @@ function TagFilterer({ onChange, sx, ...boxProps }: {
                         backgroundColor: (selectedTags.includes(tag)) ? "#ebebeb" : "#ffffff",
                         transition: "backgroundColor 0.2s ease-in-out"
                     }}
-                    // initial="unselected"
-                    // animate={selectedTags.includes(tag) ? "selected" : "unselected"}
-                    // variants={{
-                    //     unselected: {
-                    //         backgroundColor: "#ffffff",
-                    //         transition: {
-                    //             when: "afterChildren"
-                    //         }
-                    //     },
-                    //     selected: {
-                    //         backgroundColor: "#ebebeb",
-                    //         transition: {
-                    //             when: "beforeChildren"
-                    //         }
-                    //     }
-                    // }}
-                    // animate={{
-                    //     backgroundColor: (selectedTags.includes(tag)) ? "#ebebeb" : "#ffffff"
-                    // }}
-                    // transition={{
-                    //     backgroundColor: {
-                    //         duration: 0.2
-                    //     }
-                    // }}
                 />
             );
             selectedTags.includes(tag) ? selected.push(chip) : unselected.push(chip);
@@ -205,7 +180,7 @@ function AlbumGrid({ albums, isSearch }: { albums: Album[], isSearch?: boolean }
             }}
         >
             {albums.map((album) => (
-                <Album key={album.data.url} album={album} isSearch={isSearch} />
+                <AlbumTile key={album.data.url} album={album} isSearch={isSearch} />
             ))}
         </Box>
     );
@@ -214,7 +189,7 @@ function AlbumGrid({ albums, isSearch }: { albums: Album[], isSearch?: boolean }
 //const BANDCAMP_DATA_EXPIRY = /* 1 day, converted to milliseconds */ 86400000;
 const BANDCAMP_DATA_EXPIRY = /* 1 second, converted to milliseconds */ 1000;
 
-function Album({ album, isSearch }: { album: Album, isSearch?: boolean }) {
+function AlbumTile({ album, isSearch }: { album: Album, isSearch?: boolean }) {
     const { deleteAlbumsMode, selectedAlbums, playerAlbum } = useStore(["deleteAlbumsMode", "selectedAlbums", "playerAlbum"]);
     const { albums } = useStorage(["albums"]);
     const [loading, setLoading] = useState(false);

@@ -1,4 +1,4 @@
-import proxyUrl from "~/contentScripts/comms";
+import proxyUrl from "./comms";
 
 export interface ArtistPageAlbum {
     name: string,

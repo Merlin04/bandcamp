@@ -1,10 +1,7 @@
 //@ts-nocheck
 
-import * as React from 'react';
-import { useThemeProps } from '@mui/system';
-import { NoSsr } from '@mui/base';
-import { Drawer, DrawerProps, duration, ownerWindow, useEventCallback, useTheme } from '@mui/material';
-import useEnhancedEffect from '@mui/material/utils/useEnhancedEffect';
+import React from 'react';
+import { Drawer, DrawerProps, duration, ownerWindow, useEventCallback, useTheme, unstable_useEnhancedEffect as useEnhancedEffect, NoSsr, useThemeProps } from '@mui/material';
 import SwipeArea, { isHorizontal } from './SwipeArea';
 
 function ownerDocument(node: Node | null | undefined): HTMLElement {

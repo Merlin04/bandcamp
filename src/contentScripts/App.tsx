@@ -1,13 +1,12 @@
-import { createTheme, Fab, Zoom } from "@mui/material";
+import { createTheme, Fab, Zoom, ThemeProvider } from "@mui/material";
 import { CacheProvider } from "@emotion/react";
 import createCache, { EmotionCache } from "@emotion/cache";
-import LibraryMusicIcon from "@mui/icons-material/LibraryMusic";
+import { LibraryMusic as LibraryMusicIcon } from "@mui/icons-material";
 import React, { useEffect } from "react";
 import { setState, StorageProvider, useStore } from "./state";
 import AppDialog from "./AppDialog";
-import { ThemeProvider } from "@mui/system";
 import { FAB_ZI } from "./zIndices";
-import PlayerProvider from "~/contentScripts/Player";
+import PlayerProvider from "./Player";
 
 let cache: EmotionCache;
 
