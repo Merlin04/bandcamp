@@ -31,6 +31,7 @@ import SwipeableEdgeDrawer, { DrawerSpacer } from "./Drawer";
 import { BASE_ZI } from "./zIndices";
 import { Portal } from "@mui/base";
 import ErrorBoundary from "./ErrorBoundary";
+import {alert, confirm, prompt} from "./DialogProvider";
 
 export const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -234,24 +235,24 @@ function ActionsMenu() {
                 }
             >
                 <MenuItem
-                    onClick={() => {
+                    onClick={async () => {
                         // Copy the data to clipboard
-                        navigator.clipboard.writeText(JSON.stringify(data));
-                        alert("Copied to clipboard!");
+                        await navigator.clipboard.writeText(JSON.stringify(data));
+                        await alert("Copied to clipboard!");
                         handleClose();
                     }}
                 >
                     Export data
                 </MenuItem>
                 <MenuItem
-                    onClick={() => {
-                        const newData = prompt("Paste the data here");
+                    onClick={async () => {
+                        const newData = await prompt("Paste the data here");
                         if (newData) {
                             try {
                                 const parsed = JSON.parse(newData);
                                 setStorage(parsed);
                             } catch (e) {
-                                alert("Failed to parse input");
+                                await alert("Failed to parse input");
                                 return;
                             }
                         }
@@ -261,9 +262,9 @@ function ActionsMenu() {
                     Import data
                 </MenuItem>
                 <MenuItem
-                    onClick={() => {
+                    onClick={async () => {
                         if (
-                            confirm(
+                            await confirm(
                                 "Are you sure you want to delete all your data?"
                             )
                         ) {

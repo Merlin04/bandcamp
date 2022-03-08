@@ -17,12 +17,18 @@ browser.runtime.onInstalled.addListener((): void => {
 onMessage<{
     url: string
 }, "proxyUrl">("proxyUrl", async (msg) => {
-    const url = msg.data.url;
+    try {
+        const url = msg.data.url;
 
-    // Fetch the url
-    const data = await fetch(url).then((res) => res.text());
+        // Fetch the url
+        const data = await fetch(url).then((res) => res.text());
 
-    return {
-        data
+        return {
+            data
+        };
+    } catch(e) {
+        return {
+            error: (e as Error).stack ?? (e as Error).message
+        };
     }
 });

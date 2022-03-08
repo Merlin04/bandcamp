@@ -12,7 +12,7 @@ browser.webNavigation.onCommitted.addListener(({ tabId, frameId, url }) => {
 
   // inject the latest scripts
   browser.tabs.executeScript(tabId, {
-    file: `${true ? '' : '.'}/assets/index.js`,
+    file: `${isFirefox ? '' : '.'}/assets/index.js`,
     runAt: 'document_end',
   }).catch(error => console.error(error))
 })

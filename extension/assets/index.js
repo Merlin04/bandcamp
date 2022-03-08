@@ -190,11 +190,6 @@
         return await systemImport(normalizedPath);
     }
 
-    // async function systemImport(path) {
-    //     const normalizedPath = normalizePath(path);
-    //     return await systemImportBase(normalizedPath);
-    // }
-
     globalThis.System = {
         register: systemRegister,
         import: systemImport

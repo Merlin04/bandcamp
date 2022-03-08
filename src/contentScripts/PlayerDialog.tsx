@@ -1,11 +1,13 @@
-import { KeyboardArrowDown} from "@mui/icons-material";
-import { AppBar, Box, Dialog, DialogContent, IconButton, Stack, Toolbar, Typography } from "@mui/material";
-import React from "react";
+import {KeyboardArrowDown, PlaylistRemove, Add as AddIcon, Clear as ClearIcon} from "@mui/icons-material";
+import {AppBar, Box, Chip, Dialog, DialogContent, IconButton, Stack, Toolbar, Typography} from "@mui/material";
+import React, {useMemo, useState} from "react";
 import { Transition } from "./AppDialog";
 import { DrawerSpacer } from "./Drawer";
 import {PlayerWidget, usePlayerAlbumObj} from "./Player";
-import { setState, useStorage, useStore } from "./state";
+import {setState, setStorage, useStorage, useStore} from "./state";
 import { PLAYER_DIALOG_ZI } from "./zIndices";
+import {motion} from "framer-motion";
+import {prompt} from "./DialogProvider";
 
 export default function PlayerDialog() {
     const {
@@ -114,8 +116,10 @@ export default function PlayerDialog() {
                         {playerAlbumObj.data.description}
                     </Typography>
 
+                    <TagEditor album={playerDialogAlbum!} />
+
                     <Typography variant="body2" sx={{
-                        marginTop: "0.5rem"
+                        marginTop: "1rem"
                     }}>
                         Released {playerAlbumObj.data.releaseDate}
                     </Typography>
@@ -125,5 +129,102 @@ export default function PlayerDialog() {
                 <DrawerSpacer />
             )}
         </Dialog>
+    )
+}
+
+function TagEditor({ album }: {
+    album: string
+}) {
+    const { albums } = useStorage(["albums"]);
+    const albumObj = usePlayerAlbumObj({ playerAlbum: album, albums });
+    const tags = useMemo(() => albumObj!.tags.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase())), [albumObj]);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+    function updateStoredTags(newTags: string[]) {
+        setStorage({
+            albums: [
+                ...albums.filter(a => a.data.url !== album),
+                {
+                    ...albumObj!,
+                    tags: newTags
+                }
+            ]
+        });
+    }
+
+    return (
+        <>
+            <Box sx={{
+                marginTop: "0.5rem",
+                display: "flex"
+            }}>
+                <Typography variant="h6">Tags</Typography>
+                <IconButton disabled={selectedTags.length === 0} sx={{
+                    marginLeft: "auto"
+                }} component={motion.button} animate={{
+                    opacity: selectedTags.length > 0 ? 1 : 0
+                }} onClick={() => {
+                    // update tags of album object
+                    const newTags = tags.filter(tag => !selectedTags.includes(tag));
+                    updateStoredTags(newTags);
+                    setSelectedTags([]);
+                }}>
+                    <PlaylistRemove />
+                </IconButton>
+                <IconButton disabled={selectedTags.length === 0} component={motion.button} animate={{
+                    opacity: selectedTags.length > 0 ? 1 : 0
+                }} onClick={() => {
+                    setSelectedTags([]);
+                }}>
+                    <ClearIcon />
+                </IconButton>
+            </Box>
+
+            <Box component={motion.div} sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "8px"
+            }}>
+                {tags.map((tag, i) => (
+                    <Chip
+                        component={motion.div}
+                        layout
+                        // layoutId={`playerdialogtag-${tag}`}
+                        key={i}
+                        label={tag}
+                        variant="outlined"
+                        onContextMenu={e => {
+                            e.preventDefault();
+                            setSelectedTags([tag]);
+                        }}
+                        onClick={() => {
+                            if(selectedTags.length === 0) return;
+                            if (selectedTags.includes(tag)) {
+                                setSelectedTags(selectedTags.filter(t => t !== tag));
+                            } else {
+                                setSelectedTags([...selectedTags, tag]);
+                            }
+                        }}
+                        animate={{
+                            backgroundColor: selectedTags.includes(tag) ? "#ebebeb" : "transparent"
+                        }}
+                    />
+                ))}
+                <Chip
+                    component={motion.button}
+                    layout
+                    // layoutId={`playerdialogtag_new`}
+                    label="Add tag..."
+                    icon={<AddIcon />}
+                    onClick={async () => {
+                        const newTag = await prompt({
+                            title: "Add tag",
+                            text: "Enter new tag name"
+                        });
+                        if(newTag) updateStoredTags([...tags, newTag]);
+                    }}
+                />
+            </Box>
+        </>
     )
 }

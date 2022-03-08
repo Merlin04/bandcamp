@@ -15,5 +15,5 @@
   "plugins": [
     "./babel-plugin-transform-imports.mjs"
   ],
-  "sourceMaps": true
+  "sourceMaps": "inline"
 }

@@ -15,6 +15,15 @@ declare global {
 
     console.info("[bandcamp-collector] Content script activated");
 
+    // Clean up any existing instances (from HMR)
+    const existingInstances = document.getElementsByTagName("bandcamp-collector");
+    if(existingInstances.length > 0) {
+        Array.from(existingInstances).forEach(instance => {
+            ReactDOM.unmountComponentAtNode(instance.shadowRoot!.children[0]);
+            instance.remove();
+        });
+    }
+
     // mount component to context window
     const container = document.createElement("bandcamp-collector");
     const root = document.createElement("div");

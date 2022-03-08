@@ -1,6 +1,7 @@
 export default function() {
     return {
         visitor: {
+            // Works well enough
             ImportDeclaration(path) {
                 // Get the import's source value
                 const source = path.node.source.value;

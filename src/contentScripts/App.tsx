@@ -7,6 +7,7 @@ import { setState, StorageProvider, useStore } from "./state";
 import AppDialog from "./AppDialog";
 import { FAB_ZI } from "./zIndices";
 import PlayerProvider from "./Player";
+import DialogProvider from "./DialogProvider";
 
 let cache: EmotionCache;
 
@@ -97,6 +98,7 @@ export default function App() {
                 <StorageProvider>
                     <AppDialog />
                     <PlayerProvider />
+                    <DialogProvider />
                 </StorageProvider>
             </ThemeProvider>
         </CacheProvider>

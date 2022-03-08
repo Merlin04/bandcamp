@@ -51,6 +51,9 @@ const TinyText = styled(Typography)({
     letterSpacing: 0.2
 });
 
+let oldPlayerAlbumObj: Album | undefined;
+let oldPlayerTrack: number | null;
+
 // This is an audio player which controls an audio element and has a play/pause button, seek bar, time display, and next/previous track buttons.
 export default function PlayerProvider() {
     const ref = useRef<HTMLAudioElement>(null);
@@ -81,7 +84,7 @@ export default function PlayerProvider() {
     }, [playerState]);
 
     useEffect(() => {
-        if (ref.current && playerAlbumObj && playerTrack !== null) {
+        if (ref.current && playerAlbumObj && playerTrack !== null && !(playerTrack === oldPlayerTrack || oldPlayerAlbumObj?.data.url === playerAlbumObj.data.url)) {
             const track = playerAlbumObj.data.tracks[playerTrack];
             if (!track) return;
 
@@ -91,11 +94,21 @@ export default function PlayerProvider() {
 
             ref.current.src = track.url;
             playerState === PlayerState.PLAYING ? ref.current.play() : ref.current.load();
+
+            oldPlayerAlbumObj = playerAlbumObj;
+            oldPlayerTrack = playerTrack;
         }
     }, [playerAlbumObj, playerTrack]);
 
     useOnSetAudioTime((value) => {
-        if(ref.current) ref.current.currentTime = value;
+        if(ref.current) {
+            // Check if browser supports experimental fastSeek API (https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/fastSeek)
+            if (ref.current.fastSeek) {
+                ref.current.fastSeek(value);
+            } else {
+                ref.current.currentTime = value;
+            }
+        }
     }, [ref.current]);
 
     return playerState !== PlayerState.INACTIVE ? (
