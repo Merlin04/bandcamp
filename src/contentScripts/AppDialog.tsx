@@ -25,7 +25,6 @@ import AddThisAlbum from "./AddThisAlbum";
 import { PageType, pageType } from "./scraper";
 import Albums from "./Albums";
 import { Delete, MoreVert, PlaylistRemove, Close as CloseIcon } from "@mui/icons-material";
-import MiniPlayer from "./MiniPlayer";
 import PlayerDialog from "./PlayerDialog";
 import SwipeableEdgeDrawer, { DrawerSpacer } from "./Drawer";
 import { BASE_ZI } from "./zIndices";

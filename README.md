@@ -12,7 +12,25 @@ Also, content scripts don't support ES Modules so Babel and Rollup are outputtin
 
 I am sorry
 
+## Instructions for the firefox addon reviewer person
 
+**Your source code must include:**
+
+- **Step-by-step build instructions to create an exact copy of the add-on code, in a README file in your source code or in the reviewer notes on the next page.**
+  
+  1. `yarn`
+  2. `yarn build`
+  3. `yarn pack:xpi`
+- **A build script that executes all necessary technical steps.**
+
+  (scripts in the package.json, unfortunately there are some manual steps to build)
+- Operating system and build environment requirements.
+  
+  Any OS with a properly configured yarn/node should work, I'm on Ubuntu 20.04
+- The required version and installation instructions of any programs used in the build process (such as node and npm).
+  
+  - [Yarn v1](https://classic.yarnpkg.com/en/docs/install#windows-stable): I have 1.22.5, that or any newer version should work
+  - [Node.js](https://nodejs.org/en/): I have 16.14.0, but any newer should work
 
 
 

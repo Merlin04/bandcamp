@@ -308,6 +308,7 @@ function AlbumGrid({ albums, isSearch }: { albums: Album[], isSearch?: boolean }
     );
 }
 
+//const BANDCAMP_DATA_EXPIRY = 9999999999999999999999;
 const BANDCAMP_DATA_EXPIRY = /* 1 day, converted to milliseconds */ 86400000;
 //const BANDCAMP_DATA_EXPIRY = /* 1 second, converted to milliseconds */ 1000;
 
@@ -349,11 +350,11 @@ function AlbumTile({ album, isSearch }: { album: Album, isSearch?: boolean }) {
                     }
                 };
 
-                const isExpired = album.lastUpdated + BANDCAMP_DATA_EXPIRY < Date.now()
+                const isExpired = Date.now() - (album.lastUpdated + BANDCAMP_DATA_EXPIRY) > 0
                     // and make sure the album isn't currently playing
                     && !(playerAlbum === album.data.url && playerState === PlayerState.PLAYING);
                 if(isExpired) {
-                    console.log("Scraping album data...");
+                    console.log("Scraping album data... (lastUpdated)", album.lastUpdated);
                     setLoading(true);
                     scrapeAlbumUrl(album.data.url).then((newAlbumData) => {
                         console.log("Scraped album data", newAlbumData);
