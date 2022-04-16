@@ -10,27 +10,20 @@ import {
     Toolbar,
     Typography
 } from "@mui/material";
-import type { TransitionProps } from "@mui/material/transitions";
-import React, { useState } from "react";
-import {
-    defaultStorageValue,
-    PlayerState,
-    setState,
-    setStorage,
-    useStorage,
-    useStore
-} from "./state";
-import { setOpen } from "./App";
+import type {TransitionProps} from "@mui/material/transitions";
+import React, {useState} from "react";
+import {Album, defaultStorageValue, PlayerState, setState, setStorage, useStorage, useStore} from "./state";
+import {setOpen} from "./App";
 import AddThisAlbum from "./AddThisAlbum";
-import { PageType, pageType } from "./scraper";
+import {AlbumData, PageType, pageType, scrapeUnknownUrl, thisData} from "./scraper";
 import Albums from "./Albums";
-import { Delete, MoreVert, PlaylistRemove, Close as CloseIcon } from "@mui/icons-material";
+import {Close as CloseIcon, Delete, MoreVert, PlaylistRemove} from "@mui/icons-material";
 import PlayerDialog from "./PlayerDialog";
-import SwipeableEdgeDrawer, { DrawerSpacer } from "./Drawer";
-import { BASE_ZI } from "./zIndices";
-import { Portal } from "@mui/base";
+import SwipeableEdgeDrawer, {DrawerSpacer} from "./Drawer";
+import {BASE_ZI} from "./zIndices";
+import {Portal} from "@mui/base";
 import ErrorBoundary from "./ErrorBoundary";
-import {alert, confirm, prompt} from "./DialogProvider";
+import {alert, confirm, load, prompt} from "./DialogProvider";
 
 export const Transition = React.forwardRef(function Transition(
     props: TransitionProps & {
@@ -66,7 +59,10 @@ export default function AppDialog() {
                     "& *": {
                         overscrollBehavior: "contain"
                     },
-                    zIndex: BASE_ZI
+                    zIndex: BASE_ZI,
+                    // "& > .MuiDialog-container > .MuiDialog-paper": {
+                    //     overflowX: "hidden"
+                    // }
                 }}
             >
                 <ErrorBoundary>
@@ -79,7 +75,10 @@ export default function AppDialog() {
                                 position: "absolute"
                             },
                             "& > *": {
-                                minWidth: "calc(100% - 32px)"
+                                minWidth: {
+                                    xs: "calc(100% - 32px)",
+                                    sm: "calc(100% - 48px)"
+                                }
                             }
                         }}
                         color={
@@ -144,7 +143,9 @@ export default function AppDialog() {
                         </Fade>
                         {/* </Toolbar> */}
                     </AppBar>
-                    <DialogContent>
+                    <DialogContent sx={{
+                        position: "relative"
+                    }}>
                         {pageType === PageType.Album && <AddThisAlbum />}
                         <Albums />
                         <DrawerSpacer />
@@ -235,9 +236,26 @@ function ActionsMenu() {
             >
                 <MenuItem
                     onClick={async () => {
-                        // Copy the data to clipboard
-                        await navigator.clipboard.writeText(JSON.stringify(data));
-                        await alert("Copied to clipboard!");
+                        const sd = {
+                            title: "Bandcamp Collector data",
+                            //text: JSON.stringify(data),
+                            files: [
+                                new File(
+                                    [JSON.stringify(data)],
+                                    "bc-collector-data.json",
+                                    {
+                                        type: "application/json"
+                                    }
+                                )
+                            ]
+                        };
+                        if(navigator.share && navigator.canShare(sd)) {
+                            await navigator.share(sd);
+                        } else {
+                            // Copy the data to clipboard
+                            await navigator.clipboard.writeText(JSON.stringify(data));
+                            await alert("Copied to clipboard!");
+                        }
                         handleClose();
                     }}
                 >
@@ -259,6 +277,40 @@ function ActionsMenu() {
                     }}
                 >
                     Import data
+                </MenuItem>
+                <MenuItem
+                    onClick={async () => {
+                        const urls = (await prompt({
+                            title: "Import URLs",
+                            text: "Paste a list of Bandcamp artist or album URLs here (one per line, an artist URL will import all of their albums)"
+                        }, { multiline: true }))?.split("\n");
+
+                        if(!urls) return;
+
+                        const done = load();
+
+                        const albums = (await (async function scrapeUrls(urls: string[]): Promise<AlbumData[]> {
+                            return await urls.reduce(async (prev, url) => {
+                                const a = await prev;
+                                const o = await scrapeUnknownUrl(url);
+
+                                await new Promise(resolve => setTimeout(resolve, 250));
+                                return [...a, ...(o.type === PageType.Artist ? await scrapeUrls(o.albums.map(a => url + a.relUrl)) : [o])];
+                            }, Promise.resolve([] as AlbumData[]));
+                        })(urls)).map<Album>(data => ({
+                            data,
+                            tags: [...data.tags],
+                            lastUpdated: new Date().getTime()
+                        }));
+
+                        setStorage({
+                            ...data,
+                            albums: [...data.albums, ...albums]
+                        });
+                        done();
+                    }}
+                >
+                    Import URLs
                 </MenuItem>
                 <MenuItem
                     onClick={async () => {

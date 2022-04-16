@@ -19,7 +19,7 @@ export default function AddThisAlbum() {
                         ...albums,
                         {
                             data: thisData as AlbumData,
-                            tags: (thisData as AlbumData).tags,
+                            tags: [...(thisData as AlbumData).tags],
                             lastUpdated: new Date().getTime()
                         }
                     ]

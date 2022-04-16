@@ -129,7 +129,7 @@ export enum PageType {
     Unknown
 }
 
-function getPageType() {
+function getPageType(document: Document = globalThis.document) {
     return document.getElementById("music-grid") ? PageType.Artist
         : document.getElementById("tralbumArt") ? PageType.Album
         : PageType.Unknown;
@@ -142,4 +142,27 @@ export const thisData = pageType === PageType.Artist ? scrapeArtist() : pageType
 export async function scrapeAlbumUrl(url: string): Promise<AlbumData> {
     const { data: docText } = await proxyUrl(url);
     return scrapeAlbum(new DOMParser().parseFromString(docText, "text/html"));
+}
+
+function throwExp<T>(obj: any): T {
+    throw obj;
+}
+
+export async function scrapeUnknownUrl(url: string): Promise<
+    ({
+        type: PageType.Artist
+    } & ArtistData) | ({
+        type: PageType.Album
+    } & AlbumData)
+> {
+    const { data: docText } = await proxyUrl(url);
+    const doc = new DOMParser().parseFromString(docText, "text/html");
+    const type = getPageType(doc);
+    return type === PageType.Artist ? {
+        type,
+        ...scrapeArtist(doc)
+    } : type === PageType.Album ? {
+        type,
+        ...scrapeAlbum(doc)
+    } : throwExp("Unknown page type");
 }

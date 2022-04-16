@@ -1,6 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import App, { setupCache } from "./App";
+import installDvhPolyfill from "./dvh-polyfill";
 
 declare global {
     var _BANDCAMP_COLLECTOR_SHADOW_DOM: ShadowRoot;
@@ -35,6 +36,7 @@ declare global {
     document.body.appendChild(container);
 
     window._BANDCAMP_COLLECTOR_SHADOW_DOM = shadowDOM;
+    installDvhPolyfill();
 
     //@ts-expect-error - it works even though typescript complains
     setupCache(shadowDOM);

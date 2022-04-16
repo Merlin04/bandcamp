@@ -654,7 +654,7 @@ const SwipeableDrawer: React.JSXElementConstructor<SwipeableDrawerProps> = React
     }
   }, [innerDrawerOpen]);
 
-  console.log("maybeswiping", maybeSwiping);
+  console.log("SwipeableDrawer rerender");
 
   return (
     <React.Fragment>

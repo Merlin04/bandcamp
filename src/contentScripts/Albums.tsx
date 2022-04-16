@@ -8,12 +8,12 @@ import {
     TextField,
     Typography,
     BoxProps,
-    Button
+    Button, IconButton
 } from "@mui/material";
 import Fuse from "fuse.js";
 import {Album, PlayerState, setState, setStorage, useStorage, useStore} from "./state";
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {KeyboardArrowDown, Search} from "@mui/icons-material";
+import {KeyboardArrowDown, Search, Shuffle} from "@mui/icons-material";
 import {scrapeAlbumUrl} from "./scraper";
 import {animate, LayoutGroup, motion, useMotionValue} from "framer-motion";
 
@@ -92,6 +92,28 @@ export default function Albums() {
                 //     opacity: tagFilteredAlbums === null ? 1 : 0
                 // }}
             />
+            <IconButton sx={{
+                position: "absolute",
+                top: "4.65rem",
+                right: "1rem",
+                zIndex: 1
+            }} onClick={() => {
+                // Pick a random album and play it
+                const randomSource = searchFilteredAlbums ?? tagFilteredArtistShelves.map(([, albums]) => albums).flat();
+                const randomAlbum = randomSource[Math.floor(Math.random() * randomSource.length)];
+                // I could do this the proper way
+                // But it will be easier to find the actual DOM node corresponding to the album and "click" it
+                // than somehow share the onClick function between the AlbumTile component and this
+                // Each AlbumTile has a data-id attribute that contains the album's URL
+
+                const albumTile = window._BANDCAMP_COLLECTOR_SHADOW_DOM.querySelector(`[data-id="${randomAlbum.data.url}"]`);
+                if(!albumTile) throw new Error("Couldn't find album tile");
+                // Simulate a click event on the album tile
+                (albumTile as HTMLElement).click();
+                // albumTile.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+            }}>
+                <Shuffle />
+            </IconButton>
             <TagFilterer selectedTags={selectedTags} onChange={setSelectedTags} /*component={motion.div} sx={{
                 position: "relative",
                 top: tagFilteredAlbums === null ? 0 : -65
@@ -313,14 +335,14 @@ const BANDCAMP_DATA_EXPIRY = /* 1 day, converted to milliseconds */ 86400000;
 //const BANDCAMP_DATA_EXPIRY = /* 1 second, converted to milliseconds */ 1000;
 
 function AlbumTile({ album, isSearch }: { album: Album, isSearch?: boolean }) {
-    const { deleteAlbumsMode, selectedAlbums, playerAlbum, playerState } = useStore(["deleteAlbumsMode", "selectedAlbums", "playerAlbum", "playerState"]);
+    const { deleteAlbumsMode, selectedAlbums, playerAlbum, playerState, playerDialogAlbum } = useStore(["deleteAlbumsMode", "selectedAlbums", "playerAlbum", "playerState", "playerDialogAlbum"]);
     const { albums } = useStorage(["albums"]);
     const [loading, setLoading] = useState(false);
 
     const checked = deleteAlbumsMode && selectedAlbums.includes(album.data.url);
 
     return (
-        <ButtonBase sx={{
+        <ButtonBase data-id={album.data.url} sx={{
             flexDirection: "column",
             alignItems: "start",
             justifyContent: "start",
@@ -336,7 +358,7 @@ function AlbumTile({ album, isSearch }: { album: Album, isSearch?: boolean }) {
                 });
             } else {
                 const openAlbum = () => {
-                    if(playerAlbum === album.data.url) {
+                    if(playerDialogAlbum === album.data.url) {
                         setState({
                             playerDialogOpen: true
                         });
@@ -358,8 +380,14 @@ function AlbumTile({ album, isSearch }: { album: Album, isSearch?: boolean }) {
                     setLoading(true);
                     scrapeAlbumUrl(album.data.url).then((newAlbumData) => {
                         console.log("Scraped album data", newAlbumData);
+                        // Update this instance so openAlbum can use it
+                        album.data = newAlbumData;
                         setStorage({
-                            albums: albums.map(a => a.data.url === album.data.url ? { ...album, data: newAlbumData } : a)
+                            albums: albums.map(a => a.data.url === album.data.url ? {
+                                ...album,
+                                data: newAlbumData,
+                                lastUpdated: new Date().getTime()
+                            } : a)
                         });
                         openAlbum();
                         setLoading(false);

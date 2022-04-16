@@ -51,8 +51,8 @@ const TinyText = styled(Typography)({
     letterSpacing: 0.2
 });
 
-let oldPlayerAlbumObj: Album | undefined;
-let oldPlayerTrack: number | null;
+// let oldPlayerAlbumObj: Album | undefined;
+// let oldPlayerTrack: number | null;
 
 // This is an audio player which controls an audio element and has a play/pause button, seek bar, time display, and next/previous track buttons.
 export default function PlayerProvider() {
@@ -71,20 +71,29 @@ export default function PlayerProvider() {
             if (ref.current) {
                 ref.current.play();
             }
+            if("mediaSession" in navigator) {
+                navigator.mediaSession.playbackState = "playing";
+            }
         } else if (playerState === PlayerState.PAUSED) {
             if (ref.current) {
                 ref.current.pause();
             }
+            if("mediaSession" in navigator) {
+                navigator.mediaSession.playbackState = "paused";
+            }
         } else {
             if (ref.current) {
                 ref.current.pause();
+            }
+            if("mediaSession" in navigator) {
+                navigator.mediaSession.playbackState = "none";
             }
             setState({ playerAlbum: null });
         }
     }, [playerState]);
 
     useEffect(() => {
-        if (ref.current && playerAlbumObj && playerTrack !== null && !(playerTrack === oldPlayerTrack || oldPlayerAlbumObj?.data.url === playerAlbumObj.data.url)) {
+        if (ref.current && playerAlbumObj && playerTrack !== null /* && (playerTrack !== oldPlayerTrack || oldPlayerAlbumObj?.data.url !== playerAlbumObj.data.url)*/) {
             const track = playerAlbumObj.data.tracks[playerTrack];
             if (!track) return;
 
@@ -95,10 +104,27 @@ export default function PlayerProvider() {
             ref.current.src = track.url;
             playerState === PlayerState.PLAYING ? ref.current.play() : ref.current.load();
 
-            oldPlayerAlbumObj = playerAlbumObj;
-            oldPlayerTrack = playerTrack;
+            // oldPlayerAlbumObj = playerAlbumObj;
+            // oldPlayerTrack = playerTrack;
+
+            if(!("mediaSession" in navigator)) return;
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.title,
+                artist: playerAlbumObj.data.artist,
+                album: playerAlbumObj.data.title,
+                artwork: playerAlbumObj.data.imageUrl ? [
+                    {
+                        src: playerAlbumObj.data.imageUrl,
+                        // The actual size varies and I don't feel like fetching the image just to figure out what its dimensions are
+                        // If there's a problem I can implement a more comprehensive solution
+                        // Actually I don't think those were necessary (see https://w3c.github.io/mediasession/#examples)
+                        // sizes: "512x512",
+                        // type: "image/jpg"
+                    }
+                ] : []
+            })
         }
-    }, [playerAlbumObj, playerTrack]);
+    }, [playerAlbum, playerTrack]);
 
     useOnSetAudioTime((value) => {
         if(ref.current) {
@@ -110,6 +136,73 @@ export default function PlayerProvider() {
             }
         }
     }, [ref.current]);
+
+    useEffect(() => {
+        if(!("mediaSession" in navigator)) return;
+
+        const makeSeek: (dir: boolean) => MediaSessionActionHandler = (dir: boolean) => ({ fastSeek, seekOffset }) => {
+            if(!ref.current) return;
+            if(seekOffset === undefined || seekOffset === null) {
+                // https://developer.mozilla.org/en-US/docs/Web/API/MediaSession/setActionHandler
+                // If this property isn't present, those actions should choose a reasonable default distance to skip forward or backward
+                // (such as 7 or 10 seconds).
+                seekOffset = 5; // should work
+            }
+            if(!dir) {
+                seekOffset *= -1;
+            }
+            let time = ref.current.currentTime + seekOffset;
+            if(time < 0) time = 0; else if(time > ref.current.duration) time = ref.current.duration;
+            if(fastSeek) {
+                ref.current.fastSeek(time);
+            } else {
+                ref.current.currentTime = time;
+            }
+        };
+
+        const handlers: {
+            [key in MediaSessionAction]?: MediaSessionActionHandler;
+        } = {
+            pause: () => {
+                setState({ playerState: PlayerState.PAUSED });
+            },
+            play: () => {
+                setState({ playerState: PlayerState.PLAYING });
+            },
+            nexttrack: () => {
+                if(!playerAlbumObj || playerTrack === null) return;
+                if(playerTrack !== playerAlbumObj.data.tracks.length - 1) {
+                    setState({ playerTrack: playerTrack + 1 });
+                }
+            },
+            previoustrack: () => {
+                if(!playerAlbumObj || playerTrack === null) return;
+                if(playerTrack !== 0) {
+                    setState({ playerTrack: playerTrack - 1 });
+                }
+            },
+            seekbackward: makeSeek(false),
+            seekforward: makeSeek(true),
+            seekto: ({ fastSeek, seekTime }) => {
+                // seekTime... must be a floating-point value indicating the absolute time within the media to move the playback position to,
+                // where 0 indicates the beginning of the media
+                // From https://w3c.github.io/mediasession/#dom-mediasessionactiondetails-seektime
+                // The seekTime dictionary member... is the time in seconds to move the playback time to.
+                if(!ref.current) return;
+                if(fastSeek) {
+                    ref.current.fastSeek(seekTime!);
+                } else {
+                    ref.current.currentTime = seekTime!;
+                }
+            },
+            stop: () => {
+                setState({ playerState: PlayerState.INACTIVE });
+            },
+        };
+        Object.entries(handlers).forEach(([key, value]) => {
+            navigator.mediaSession.setActionHandler(key as MediaSessionAction, value);
+        });
+    }, [playerAlbumObj, playerTrack]);
 
     return playerState !== PlayerState.INACTIVE ? (
         <>

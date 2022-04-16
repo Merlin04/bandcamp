@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import { sharedConfig } from "./vite.config";
 import { r, isDev } from "./scripts/utils";
 import packageJson from "./package.json";
+import { visualizer } from "rollup-plugin-visualizer";
 
 // bundling the content script using Vite
 export default defineConfig({
@@ -24,5 +25,5 @@ export default defineConfig({
             },
         },
     },
-    plugins: [...sharedConfig.plugins!],
+    plugins: [...sharedConfig.plugins!, visualizer()]
 });

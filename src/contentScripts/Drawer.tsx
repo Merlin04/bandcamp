@@ -1,15 +1,13 @@
-import React, {useEffect, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import { Global } from "@emotion/react";
 import SwipeableDrawer from "./SwipeableDrawer-patched/SwipeableDrawer";
 import { DRAWER_ZI } from "./zIndices";
-import { Paper, Box, Typography, colors, styled } from "@mui/material";
-// import MiniPlayer from "./MiniPlayer";
+import { Paper, Box, Typography, styled } from "@mui/material";
 import { PlayButton, TrackControls, usePlayerAlbumObj } from "./Player";
 import { PlayerState, useStorage, useStore } from "./state";
 import {motion} from "framer-motion";
 import {Player} from "./PlayerDialog";
-
-const { grey } = colors;
+import { createState } from "niue";
 
 const drawerBleeding = 75;
 
@@ -34,6 +32,28 @@ let scrollLocked = false;
 type Coords = [number, number];
 let scrollFirstCoords: Coords | null = null;
 
+const SwipeableDrawerSx = {
+    "& .MuiDrawer-paper": {
+        height: `calc(calc(100 * var(--dvh)) - ${drawerBleeding + 50}px)`
+    },
+    zIndex: DRAWER_ZI
+};
+const SwipeableDrawerSwipeAreaProps = {
+    sx: {
+        zIndex: DRAWER_ZI - 1
+    },
+    // TODO
+    // onClick: () => setOpen(true)
+};
+const SwipeableDrawerModalProps = {
+    keepMounted: true
+};
+
+const [useDrawerState, setDrawerState] = createState({
+    percentOpen: 0,
+    innerDrawerOpen: false
+});
+
 export default function SwipeableEdgeDrawer() {
     const [open, setOpen] = React.useState(false);
     const drawerBoxRef = React.useRef<HTMLDivElement>(null);
@@ -51,42 +71,20 @@ export default function SwipeableEdgeDrawer() {
     };
 
     const [disableBoxScroll, setDisableBoxScroll] = React.useState(false);
-    const [innerDrawerOpen, setInnerDrawerOpen] = React.useState(false);
-    const [percentOpen, setPercentOpen] = React.useState(0);
 
-    return (
-        <SwipeableDrawer
-            anchor="bottom"
-            open={open}
-            onClose={toggleDrawer(false)}
-            onOpen={toggleDrawer(true)}
-            swipeAreaWidth={drawerBleeding}
-            disableSwipeToOpen={false}
-            ModalProps={{
-                keepMounted: true
-            }}
-            sx={{
-                "& .MuiDrawer-paper": {
-                    height: `calc(100vh - ${drawerBleeding + 50}px)`
-                },
-                zIndex: DRAWER_ZI
-            }}
-            ref={drawerRef}
-            SwipeAreaProps={{
-                sx: {
-                    zIndex: DRAWER_ZI - 1
-                },
-                // TODO
-                // onClick: () => setOpen(true)
-            }}
-            onPercentOpenUpdate={(newPercentOpen: number) => {
-                setPercentOpen(newPercentOpen);
-                // drawerRef.current?.style.setProperty("--drawer-percent-open", `${newPercentOpen}`);
-            }}
-            onInnerDrawerOpenUpdate={(newInnerDrawerOpen: boolean) => {
-                setInnerDrawerOpen(newInnerDrawerOpen);
-            }}
-        >
+    const onPercentOpenUpdate = useCallback((newPercentOpen: number) => {
+        setDrawerState({ percentOpen: newPercentOpen });
+        // drawerRef.current?.style.setProperty("--drawer-percent-open", `${newPercentOpen}`);
+    }, []);
+    const onInnerDrawerOpenUpdate = useCallback((newInnerDrawerOpen: boolean) => {
+        setDrawerState({ innerDrawerOpen: newInnerDrawerOpen });
+    }, []);
+
+    const onClose = useCallback(toggleDrawer(false), []);
+    const onOpen = useCallback(toggleDrawer(true), []);
+
+    const DrawerChildren = useMemo(() => (
+        <>
             <Global
                 styles={{
                     ".MuiDrawer-root > .MuiPaper-root": {
@@ -106,7 +104,7 @@ export default function SwipeableEdgeDrawer() {
                     right: 0,
                     left: 0,
                     overflow: disableBoxScroll || !open ? "hidden" : "auto",
-                    maxHeight: "100vh",
+                    maxHeight: "calc(100 * var(--dvh))",
                     minHeight: `calc(100% + ${drawerBleeding}px)`
                 }}
                 ref={drawerBoxRef}
@@ -155,31 +153,30 @@ export default function SwipeableEdgeDrawer() {
             >
                 <Puller />
 
-                <DrawerContents open={open} innerDrawerOpen={innerDrawerOpen} percentOpen={percentOpen} />
-
-                {/* <Typography sx={{ p: 2, color: "text.secondary" }}>
-                    51 resultstsratrs
-                </Typography> */}
-                {/* <Skeleton variant="rectangular" height="200vh" /> */}
+                <DrawerContents open={open} />
             </Paper>
+        </>
+    ), [open, disableBoxScroll]);
+
+    return (
+        <SwipeableDrawer
+            anchor="bottom"
+            open={open}
+            onClose={onClose}
+            onOpen={onOpen}
+            swipeAreaWidth={drawerBleeding}
+            disableSwipeToOpen={false}
+            ModalProps={SwipeableDrawerModalProps}
+            sx={SwipeableDrawerSx}
+            ref={drawerRef}
+            SwipeAreaProps={SwipeableDrawerSwipeAreaProps}
+            onPercentOpenUpdate={onPercentOpenUpdate}
+            onInnerDrawerOpenUpdate={onInnerDrawerOpenUpdate}
+        >
+            {DrawerChildren}
         </SwipeableDrawer>
-        // </Root>
     );
 }
-
-// function getPercentOpen({ open, innerDrawerOpen, rawPercent }: {
-//     open: boolean;
-//     innerDrawerOpen: boolean;
-//     rawPercent: number
-// }) {
-//     if(!open && !innerDrawerOpen) {
-//         // Fully closed
-//         return 0;
-//     } else if(!open && innerDrawerOpen) {
-//         // Dragging the drawer up (opening)
-//         return rawPercent;
-//     } else if()
-// }
 
 enum DrawerState {
     Closed,
@@ -191,11 +188,10 @@ enum DrawerState {
 let evenOlderState: DrawerState | undefined = undefined;
 let oldPercent = 0;
 
-function DrawerContents({ open, innerDrawerOpen, percentOpen: rawPercent }: {
-    open: boolean,
-    innerDrawerOpen: boolean,
-    percentOpen: number
+function DrawerContents({ open }: {
+    open: boolean
 }) {
+    const { percentOpen: rawPercent, innerDrawerOpen } = useDrawerState(["percentOpen", "innerDrawerOpen"]);
     const [drawerState, setDrawerState] = useState<DrawerState>(DrawerState.Closed);
 
     // Sometimes this gets confused between open and closing but it's fine, percentage should still be accurate enough
@@ -214,14 +210,14 @@ function DrawerContents({ open, innerDrawerOpen, percentOpen: rawPercent }: {
             // Dragging the drawer down (closing)
             : DrawerState.Closing;
 
-        console.table({
-            open,
-            innerDrawerOpen,
-            rawPercent,
-            evenOlderState: evenOlderState && DrawerState[evenOlderState],
-            drawerState: DrawerState[drawerState],
-            newState: DrawerState[newState]
-        });
+        // console.table({
+        //     open,
+        //     innerDrawerOpen,
+        //     rawPercent,
+        //     evenOlderState: evenOlderState && DrawerState[evenOlderState],
+        //     drawerState: DrawerState[drawerState],
+        //     newState: DrawerState[newState]
+        // });
 
         if((
             // This is a weird edge case where it flips to closed before fully opening after the user stops the gesture
@@ -232,13 +228,13 @@ function DrawerContents({ open, innerDrawerOpen, percentOpen: rawPercent }: {
             newState === DrawerState.Opening && drawerState === DrawerState.Closing
         ) && rawPercent === oldPercent) {
             // So don't actually update the state
-            console.log("Skipping state update");
+            // console.log("Skipping state update");
             return;
         }
 
         if(newState !== drawerState) {
             evenOlderState = drawerState;
-            console.log("Set evenOlderState to ", DrawerState[evenOlderState]);
+            // console.log("Set evenOlderState to ", DrawerState[evenOlderState]);
             setDrawerState(newState);
         }
         oldPercent = rawPercent;
@@ -259,16 +255,6 @@ function DrawerContents({ open, innerDrawerOpen, percentOpen: rawPercent }: {
     const { albums } = useStorage(["albums"]);
 
     const playerAlbumObj = usePlayerAlbumObj({ playerAlbum, albums });
-
-    // // Calculate new drawer state
-    // const newDrawerState =
-    //
-    // const percentOpen =
-    //     // Fully closed
-    //     (!open && !innerDrawerOpen) ? 0 :
-    //     // Dragging the drawer up (opening)
-    //     (!open && innerDrawerOpen) ? rawPercent :
-    //     // Fully open, or it's
 
     return (playerAlbumObj && playerTrack !== null) ? (
         <Box>
@@ -351,99 +337,3 @@ function MiniPlayer() {
         </Box>
     )
 }
-
-/* <Typography variant="body1">
-                    {playerAlbumObj.data.tracks[playerTrack].title}
-                </Typography>
-                <Typography variant="body2">
-                    <b>{playerAlbumObj.data.title}</b> by {playerAlbumObj.data.artist}
-                </Typography> */
-
-// const mapNum = (num: number, in_min: number, in_max: number, out_min: number, out_max: number) => {
-//     return (num - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-// };
-//
-// // use CSS calc function to do mapping
-// const cssMapNum = (num: number | string, in_min: number | string, in_max: number | string, out_min: number | string, out_max: number | string) => {
-//     return `calc(calc(calc(calc(${num} - ${in_min}) * calc(${out_max} - ${out_min})) / calc(${in_max} - ${in_min})) + ${out_min})`;
-// };
-//
-// function DrawerContents({ open, innerDrawerOpen }: {
-//     // True if the drawer is completely open, false otherwise
-//     open: boolean,
-//     // If the drawer is anything other than completely closed
-//     innerDrawerOpen: boolean
-// }) {
-//     console.log("drawer open state", { open, innerDrawerOpen });
-//     const {
-//         playerAlbum,
-//         playerTrack
-//     } = useStore(["playerState", "playerAlbum", "playerTrack"]);
-//
-//     const { albums } = useStorage(["albums"]);
-//
-//     const playerAlbumObj = usePlayerAlbumObj({ playerAlbum, albums });
-//
-//     return (playerAlbumObj && playerTrack !== null) ? (
-//         <Box sx={{
-//             width: "100%",
-//             height: drawerBleeding,
-//             display: "flex",
-//             justifyContent: "center"
-//         }}>
-//             <Box sx={{
-//                 width: drawerBleeding,
-//                 zIndex: 1
-//             }}>
-//                 <Box
-//                     component="img"
-//                     src={playerAlbumObj.data.imageUrl}
-//                     sx={{
-//                         position: "absolute",
-//                         width: open ? "100vw" : !innerDrawerOpen ? drawerBleeding : cssMapNum("var(--drawer-percent-open)", 0, 1, drawerBleeding + "px", "100vw"),
-//                     }}
-//                 />
-//             </Box>
-//             <Box sx={{
-//                 height: "100%",
-//                 display: "flex",
-//                 justifyContent: "center",
-//                 opacity: open ? 0 : !innerDrawerOpen ? 1 : "calc(1 - var(--drawer-percent-open))",
-//                 flex: 1
-//             }}>
-//                 <Box sx={{
-//                     flex: 1,
-//                     textOverflow: "ellipsis",
-//                     overflow: "hidden",
-//                     whiteSpace: "nowrap",
-//                     display: "flex",
-//                     flexDirection: "column",
-//                     justifyContent: "center",
-//                     marginLeft: "0.5rem"
-//                 }}>
-//                     {/* <Typography variant="body1">
-//                     {playerAlbumObj.data.tracks[playerTrack].title}
-//                 </Typography>
-//                 <Typography variant="body2">
-//                     <b>{playerAlbumObj.data.title}</b> by {playerAlbumObj.data.artist}
-//                 </Typography> */}
-//                     <Typography variant="caption" color="text.secondary" fontWeight={500}>
-//                         {playerAlbumObj.data.artist}
-//                     </Typography>
-//                     <Typography sx={{ fontWeight: "bold" }}>
-//                         {playerAlbumObj.data.title}
-//                     </Typography>
-//                     <Typography letterSpacing={-0.25}>
-//                         {playerAlbumObj.data.tracks[playerTrack].title}
-//                     </Typography>
-//                 </Box>
-//                 <PlayButton sx={{
-//                     pointerEvents: "auto"
-//                 }}/>
-//                 <TrackControls sx={{
-//                     pointerEvents: "auto"
-//                 }} />
-//             </Box>
-//         </Box>
-//     ) : null;
-// }

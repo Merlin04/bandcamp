@@ -3,16 +3,23 @@ import type { RollupOptions } from "rollup";
 import nodeResolvePlugin from "@rollup/plugin-node-resolve";
 import commonJSPlugin from "@rollup/plugin-commonjs";
 import packageJson from "./package.json";
-import { readFile } from "fs/promises";
+import { readFile, access } from "fs/promises";
 import { join } from "path";
 
 // For a given package name, return the path to the module JavaScript file (listed in the package.json module property)
 async function findPackageJSPath(packageName: string) {
   const packageJsonPath = `node_modules/${packageName}/package.json`;
   const packageJson = JSON.parse(await readFile(packageJsonPath, "utf8"));
-  const modulePath = packageJson.module ?? packageJson.main;
+  const modulePath = packageJson.module ?? packageJson.main ?? "index.js";
   console.log(`Found ${packageName} at ${modulePath}`);
+  // Check if path undefined or if the actual file doesn't exist
   if(!modulePath) return undefined;
+  try {
+    await access(join(process.cwd(), "node_modules", packageName, modulePath));
+  } catch(e) {
+    console.error(`Could not find ${packageName} at ${modulePath}`);
+    return undefined;
+  }
   return join("node_modules", packageName, modulePath);
 }
 

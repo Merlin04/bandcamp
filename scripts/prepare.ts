@@ -32,12 +32,12 @@ function writeManifest() {
 writeManifest()
 
 if (isDev) {
-  stubIndexHtml()
-  chokidar.watch(r('src/**/*.html'))
-    .on('change', () => {
-      stubIndexHtml()
-    })
-  chokidar.watch([r('src/manifest.ts'), r('package.json'), r('extension/dist/contentScripts/**/*')])
+  // stubIndexHtml()
+  // chokidar.watch(r('src/**/*.html'))
+  //   .on('change', () => {
+  //     stubIndexHtml()
+  //   })
+  chokidar.watch([r('src/manifest.ts'), r('package.json')/*, r('extension/dist/contentScripts/**       /*')*/])
     .on('change', () => {
       writeManifest()
     })

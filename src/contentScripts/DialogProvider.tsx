@@ -7,7 +7,7 @@ import {
     DialogContentText,
     Button,
     TextField,
-    RadioGroup, Radio, FormControlLabel
+    RadioGroup, Radio, FormControlLabel, CircularProgress
 } from "@mui/material";
 import {GENERIC_DIALOG_ZI} from "./zIndices";
 
@@ -19,22 +19,29 @@ type DialogStrings = string | {
 
 type AlertFn = (message: DialogStrings) => Promise<void>;
 type ConfirmFn = (message: DialogStrings) => Promise<boolean>;
-type PromptFn = (message: DialogStrings) => Promise<string | null>;
+type PromptOptions = {
+    multiline?: boolean;
+}
+type PromptArgs = [message: DialogStrings, options?: PromptOptions];
+type PromptFn = (...args: PromptArgs) => Promise<string | null>;
 type ChooseFn = (message: DialogStrings, options: DialogText[]) => Promise<number | null>;
+type LoadFn = () => () => void;
 
 export let alert: AlertFn = null!;
 export let confirm: ConfirmFn = null!;
 export let prompt: PromptFn = null!;
 export let choose: ChooseFn = null!;
+export let load: LoadFn = null!;
 
 enum DialogType {
-  Alert,
-  Confirm,
-  Prompt,
-  Choose
+    Alert,
+    Confirm,
+    Prompt,
+    Choose,
+    Load
 }
 
-type FnArgs = [DialogStrings] | [DialogStrings, DialogText[]];
+type FnArgs = [message: DialogStrings] | [message: DialogStrings, options: DialogText[]] | PromptArgs;
 
 export default function DialogProvider(props: React.PropsWithChildren<{}>) {
     const [type, setType] = React.useState<DialogType | null>(null);
@@ -57,6 +64,15 @@ export default function DialogProvider(props: React.PropsWithChildren<{}>) {
     confirm = functionFactory(DialogType.Confirm);
     prompt = functionFactory(DialogType.Prompt);
     choose = functionFactory(DialogType.Choose);
+    load = () => {
+        setType(DialogType.Load);
+        setArgs([] as any);
+        setResolve(true as any);
+        return () => {
+            setType(null);
+            setArgs(null);
+        };
+    }
 
     const renderDialog = () => {
         if (type === null || args === null || resolve === null) {
@@ -75,6 +91,8 @@ export default function DialogProvider(props: React.PropsWithChildren<{}>) {
             case DialogType.Choose:
                 // @ts-expect-error
                 return <ChooseDialog args={args} resolve={resolve} />;
+            case DialogType.Load:
+                return <LoadDialog />;
             default:
                 return null;
         }
@@ -135,7 +153,7 @@ function ConfirmDialog({args, resolve}: {args: [DialogStrings], resolve: (value:
     );
 }
 
-function PromptDialog({args, resolve}: {args: [DialogStrings], resolve: (value: string | null) => void}) {
+function PromptDialog({args, resolve}: {args: PromptArgs, resolve: (value: string | null) => void}) {
     const [open, setOpen] = React.useState(true);
 
     const close = (val: string | null) => {
@@ -155,7 +173,7 @@ function PromptDialog({args, resolve}: {args: [DialogStrings], resolve: (value: 
                     <DialogTitle>{typeof args[0] === "string" ? "Prompt" : args[0].title === undefined ? "Prompt" : args[0].title}</DialogTitle>
                     <DialogContent>
                         <DialogContentText>{typeof args[0] === "string" ? args[0] : args[0].text}</DialogContentText>
-                        <TextField name="prompt" autoFocus margin="dense" type="text" fullWidth />
+                        <TextField name="prompt" multiline={args[1]?.multiline} autoFocus margin="dense" type="text" fullWidth />
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={() => close(null)}>Cancel</Button>
@@ -194,4 +212,16 @@ function ChooseDialog({args, resolve}: {args: [DialogStrings, DialogText[]], res
             </DialogActions>
         </Dialog>
     );
+}
+
+function LoadDialog() {
+    return (
+        <Dialog open sx={{
+            zIndex: GENERIC_DIALOG_ZI
+        }}>
+            <DialogContent>
+                <CircularProgress />
+            </DialogContent>
+        </Dialog>
+    )
 }
