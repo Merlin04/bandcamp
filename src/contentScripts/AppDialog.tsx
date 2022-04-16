@@ -197,11 +197,8 @@ function ActionsMenu() {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const open = Boolean(anchorEl);
 
-    console.log(open);
-
     const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setAnchorEl(event.currentTarget);
-        console.log(event.currentTarget);
     };
 
     const handleClose = () => {

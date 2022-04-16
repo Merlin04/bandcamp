@@ -202,7 +202,6 @@ function TagFilterer({ selectedTags, onChange: setSelectedTags, sx, ...boxProps 
     const tagContainerMaxHeight = useMotionValue(75);
 
     useEffect(() => {
-        console.log("running animation");
         // const from = hidden ? tagListRef.current!.scrollHeight : 75;
         const to = hidden ? 75 : tagListRef.current!.scrollHeight;
 
@@ -212,7 +211,6 @@ function TagFilterer({ selectedTags, onChange: setSelectedTags, sx, ...boxProps 
 
         const controls = animate(tagContainerMaxHeight, to, {
             onComplete: () => {
-                console.log("animation done");
                 tagContainerMaxHeight.set(hidden ? 75 : "none" as unknown as number);
                 controls.stop();
             }
@@ -376,10 +374,8 @@ function AlbumTile({ album, isSearch }: { album: Album, isSearch?: boolean }) {
                     // and make sure the album isn't currently playing
                     && !(playerAlbum === album.data.url && playerState === PlayerState.PLAYING);
                 if(isExpired) {
-                    console.log("Scraping album data... (lastUpdated)", album.lastUpdated);
                     setLoading(true);
                     scrapeAlbumUrl(album.data.url).then((newAlbumData) => {
-                        console.log("Scraped album data", newAlbumData);
                         // Update this instance so openAlbum can use it
                         album.data = newAlbumData;
                         setStorage({

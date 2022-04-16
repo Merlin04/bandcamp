@@ -653,9 +653,7 @@ const SwipeableDrawer: React.JSXElementConstructor<SwipeableDrawerProps> = React
       onInnerDrawerOpenUpdate(innerDrawerOpen);
     }
   }, [innerDrawerOpen]);
-
-  console.log("SwipeableDrawer rerender");
-
+  
   return (
     <React.Fragment>
       <Drawer

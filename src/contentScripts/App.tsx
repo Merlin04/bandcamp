@@ -57,13 +57,9 @@ export default function App() {
 
     useEffect(() => {
         function onPopState(e: Event) {
-            console.log("History pop state", e);
             // const historyStateOpen = e.state?.open ?? false;
             const historyStateOpen = window.location.search === "?bc-collector";
-            console.log("History state open", historyStateOpen);
-            console.log("Open", open);
             if (historyStateOpen !== open) {
-                console.log("Setting state to", historyStateOpen);
                 setState({ open: historyStateOpen });
             }
         }
